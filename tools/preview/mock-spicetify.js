@@ -12,12 +12,22 @@
     (document.body || document.documentElement).appendChild(b);
   }
 
+  // A colorful fake cover so glass / Ambient / Vibe Glow have something to show.
+  try {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 96;
+    const g = cv.getContext("2d");
+    const gr = g.createLinearGradient(0, 0, 96, 96);
+    gr.addColorStop(0, "#ff5fa2"); gr.addColorStop(0.5, "#7c5cff"); gr.addColorStop(1, "#1ec8ff");
+    g.fillStyle = gr; g.fillRect(0, 0, 96, 96);
+    window.__mockCover = cv.toDataURL("image/png");
+  } catch (_) { window.__mockCover = ""; }
+
   const listeners = {};
   const data = {
     isPaused: false,
     item: {
       uri: "spotify:track:mock",
-      metadata: { title: "Midnight Drive", artist_name: "The Moggers", album_title: "Night Shift", image_xlarge_url: "", image_url: "" },
+      metadata: { title: "Midnight Drive", artist_name: "The Moggers", album_title: "Night Shift", image_xlarge_url: window.__mockCover, image_url: window.__mockCover },
       duration: { milliseconds: 214000 },
     },
     positionAsOfTimestamp: 61000,

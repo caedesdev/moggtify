@@ -11,7 +11,7 @@ import (
 
 const (
 	AppName    = "Moggtify"
-	AppVersion = "1.0.0"
+	AppVersion = "1.1.0"
 	RepoURL    = "https://github.com/caedesdev/moggtify"
 )
 

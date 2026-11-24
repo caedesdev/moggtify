@@ -17,9 +17,11 @@ const file = resolve(args.find((a) => !a.startsWith("--")) || resolve(here, "../
 /* ---------------------------------------------------------------- rules */
 
 const ROLES = ["frame", "base", "highlight", "elevated", "elevatedHighlight", "text", "subdued", "accent", "accentText", "border"];
-const KEYS = new Set(["id", "name", "description", "passthrough", "flavor", "tags", "colors"]);
-const FLAVOR_MAX = { flat: Infinity, glass: 2, soft: 3 };
-const COUNT = [12, 14]; // Spotify + Mogg + 10 to 12 originals
+const KEYS = new Set(["id", "name", "description", "passthrough", "flavor", "effects", "aurora", "tags", "colors"]);
+// flavor = what sits behind the panels; effects = extras layered on top.
+const FLAVOR_MAX = { flat: Infinity, glass: 4, aurora: 5 };
+const EFFECTS = ["soft", "neon", "wash"];
+const COUNT = [12, 32]; // Spotify + Mogg + originals
 const SPOTIFY = {
   frame: "#000000", base: "#121212", highlight: "#1f1f1f", elevated: "#1f1f1f", elevatedHighlight: "#2a2a2a",
   text: "#ffffff", subdued: "#b3b3b3", accent: "#1ed760", accentText: "#000000", border: "#292929",
@@ -106,7 +108,7 @@ if (!Array.isArray(designs)) {
 }
 
 const label = (d, i) => (d && typeof d.id === "string" && d.id ? d.id : `#${i + 1}`);
-const ids = new Map(), names = new Map(), flavors = { flat: 0, glass: 0, soft: 0 };
+const ids = new Map(), names = new Map(), flavors = { flat: 0, glass: 0, aurora: 0 };
 
 designs.forEach((d, i) => {
   const at = label(d, i);
@@ -136,8 +138,21 @@ designs.forEach((d, i) => {
   if (d.passthrough && i > 0) err("only the Spotify design may be passthrough");
 
   if (d.flavor !== undefined) {
-    if (!Object.hasOwn(FLAVOR_MAX, d.flavor)) err(`flavor must be flat, glass or soft (got ${JSON.stringify(d.flavor)})`);
+    if (!Object.hasOwn(FLAVOR_MAX, d.flavor)) err(`flavor must be flat, glass or aurora (got ${JSON.stringify(d.flavor)})`);
     else flavors[d.flavor]++;
+  }
+
+  if (d.effects !== undefined) {
+    if (!Array.isArray(d.effects) || !d.effects.length) err("effects must be a non-empty array (or leave it out)");
+    else {
+      for (const e of d.effects) if (!EFFECTS.includes(e)) err(`unknown effect ${JSON.stringify(e)} (soft, neon, wash)`);
+      if (new Set(d.effects).size !== d.effects.length) err("duplicate effects");
+    }
+  }
+
+  if (d.aurora !== undefined) {
+    if (d.flavor !== "aurora") err('"aurora" colors only make sense with flavor "aurora"');
+    if (!Array.isArray(d.aurora) || d.aurora.length !== 3 || d.aurora.some((c) => typeof c !== "string" || !HEX.test(c))) err("aurora must be three #rrggbb colors");
   }
 
   if (d.tags !== undefined) {
@@ -186,7 +201,7 @@ else {
 if (!second || second.id !== "mogg" || second.name !== "Mogg") errors.push('order: second design must be "mogg" ("Mogg")');
 
 if (designs.length < COUNT[0] || designs.length > COUNT[1]) {
-  errors.push(`count: expected ${COUNT[0]}-${COUNT[1]} designs (Spotify, Mogg and 10-12 originals), found ${designs.length}`);
+  errors.push(`count: expected ${COUNT[0]}-${COUNT[1]} designs, found ${designs.length}`);
 }
 for (const [f, n] of Object.entries(flavors)) {
   if (n > FLAVOR_MAX[f]) errors.push(`flavor: "${f}" used ${n} times, at most ${FLAVOR_MAX[f]}`);
@@ -238,5 +253,5 @@ if (errors.length) console.log("\nErrors\n" + errors.map((e) => "  x " + e).join
 if (warnings.length) console.log("\nWarnings\n" + warnings.map((w) => "  ! " + w).join("\n"));
 const fail = errors.length > 0 || (strict && warnings.length > 0);
 console.log(`\n${fail ? "FAIL" : "PASS"}: ${designs.length} designs, ${errors.length} errors, ${warnings.length} warnings` +
-  `, glass ${flavors.glass}/${FLAVOR_MAX.glass}, soft ${flavors.soft}/${FLAVOR_MAX.soft}${strict ? " (strict)" : ""}`);
+  `, glass ${flavors.glass}/${FLAVOR_MAX.glass}, aurora ${flavors.aurora}/${FLAVOR_MAX.aurora}${strict ? " (strict)" : ""}`);
 process.exit(fail ? 1 : 0);

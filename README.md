@@ -82,12 +82,19 @@ Every action shows its steps live. If one fails, you get the engine's actual err
 
 After Install, Spotify restarts with Moggtify. In the top bar, right next to your profile picture, there's a new **M** button. Click it, or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> anywhere in Spotify, to open the **Moggtify Hub**:
 
-- **Designs.** Moggtify's own color designs for the whole client, applied instantly. The Spotify design keeps the original look: it's the default, and the one to pick when you use a theme from the Marketplace.
+- **Designs.** 26 of Moggtify's own designs for the whole client, applied instantly and filterable by style: calm palettes, **Glass** (blurred cover art behind translucent panels), **Aurora** (slow drifting lights) and **Neon** (glowing outlines). The Spotify design keeps the original look: it's the default, and the one to pick when you use a theme from the Marketplace.
+- **Design Studio.** Make your own: pick a background and an accent, choose a style and effects, and Moggtify builds a complete, always-readable palette around them, live in Spotify while you edit. Save up to 24 designs and share any of them as a short `mogg:` code.
 - **Extras.** Small add-ons you switch on and off live: Stage (cinematic full-screen now playing, <kbd>F8</kbd>), Vibe Glow (the accent color follows the cover), Ambient (soft album-art glow behind the app), Smart Skip (skips live, sped-up, slowed or remix versions), Wheel Volume (scroll over the player bar) and Clean UI (hides upgrade buttons and banners).
 - **What's installed.** Every extension and app Moggtify set up, and where to find it.
 
 <p align="center">
   <img src="docs/screenshots/hub.png" width="860" alt="The Moggtify Hub inside Spotify">
+</p>
+<p align="center">
+  <img src="docs/screenshots/studio.png" width="860" alt="The Design Studio: make your own design from two colors">
+</p>
+<p align="center">
+  <img src="docs/screenshots/designs.png" width="860" alt="A selection of Moggtify designs applied to Spotify">
 </p>
 
 ## FAQ

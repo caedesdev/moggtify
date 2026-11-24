@@ -22,7 +22,11 @@
     "name": "Mogg",
     "description": "Moggtify's signature: deep green-black lit by a mint glow.",
     "flavor": "glass",
-    "tags": ["cool", "signature", "glow"],
+    "tags": [
+      "cool",
+      "signature",
+      "glow"
+    ],
     "colors": {
       "frame": "#030605",
       "base": "#0a1610",
@@ -37,11 +41,268 @@
     }
   },
   {
+    "id": "aurora",
+    "name": "Aurora",
+    "description": "Northern lights drifting slowly behind your music.",
+    "flavor": "aurora",
+    "aurora": [
+      "#22d3ee",
+      "#a78bfa",
+      "#34d399"
+    ],
+    "tags": [
+      "cool",
+      "animated",
+      "glow"
+    ],
+    "colors": {
+      "frame": "#03070a",
+      "base": "#071219",
+      "highlight": "#10222f",
+      "elevated": "#0e1e29",
+      "elevatedHighlight": "#162d3d",
+      "text": "#f3f7f9",
+      "subdued": "#97acba",
+      "accent": "#c8ffe8",
+      "accentText": "#081c13",
+      "border": "#182f3e"
+    }
+  },
+  {
+    "id": "nebula",
+    "name": "Nebula",
+    "description": "A violet starfield lit by slow cosmic light.",
+    "flavor": "aurora",
+    "effects": [
+      "neon"
+    ],
+    "aurora": [
+      "#7c3aed",
+      "#ec4899",
+      "#38bdf8"
+    ],
+    "tags": [
+      "cool",
+      "animated",
+      "space"
+    ],
+    "colors": {
+      "frame": "#05040c",
+      "base": "#0d0a1c",
+      "highlight": "#191431",
+      "elevated": "#16112b",
+      "elevatedHighlight": "#211b3e",
+      "text": "#f4f3f9",
+      "subdued": "#9d97ba",
+      "accent": "#ff9ee6",
+      "accentText": "#1c0817",
+      "border": "#221c3f"
+    }
+  },
+  {
+    "id": "laser",
+    "name": "Laser",
+    "description": "Electric cyan outlines on a midnight grid.",
+    "flavor": "flat",
+    "effects": [
+      "neon",
+      "wash"
+    ],
+    "tags": [
+      "cool",
+      "vivid",
+      "glow"
+    ],
+    "colors": {
+      "frame": "#030508",
+      "base": "#070b14",
+      "highlight": "#101829",
+      "elevated": "#0e1524",
+      "elevatedHighlight": "#172137",
+      "text": "#f3f5f9",
+      "subdued": "#97a2ba",
+      "accent": "#22e0ff",
+      "accentText": "#08191c",
+      "border": "#192238"
+    }
+  },
+  {
+    "id": "ultraviolet",
+    "name": "Ultraviolet",
+    "description": "Blacklight purple over frosted glass.",
+    "flavor": "glass",
+    "effects": [
+      "neon"
+    ],
+    "tags": [
+      "cool",
+      "vivid",
+      "night"
+    ],
+    "colors": {
+      "frame": "#04030a",
+      "base": "#0a0717",
+      "highlight": "#160f2d",
+      "elevated": "#130d28",
+      "elevatedHighlight": "#1e163b",
+      "text": "#f5f3f9",
+      "subdued": "#9f97ba",
+      "accent": "#8a5cff",
+      "accentText": "#0e081c",
+      "border": "#20173c"
+    }
+  },
+  {
+    "id": "solstice",
+    "name": "Solstice",
+    "description": "A long golden dusk that never quite ends.",
+    "flavor": "aurora",
+    "effects": [
+      "soft"
+    ],
+    "aurora": [
+      "#fb7185",
+      "#f59e0b",
+      "#a855f7"
+    ],
+    "tags": [
+      "warm",
+      "animated",
+      "dreamy"
+    ],
+    "colors": {
+      "frame": "#090504",
+      "base": "#160c0a",
+      "highlight": "#2a1815",
+      "elevated": "#251512",
+      "elevatedHighlight": "#37211c",
+      "text": "#f9f4f3",
+      "subdued": "#ba9d97",
+      "accent": "#ffe2b8",
+      "accentText": "#1c1408",
+      "border": "#38221e"
+    }
+  },
+  {
+    "id": "magma",
+    "name": "Magma",
+    "description": "Cooling lava: basalt black with a molten orange core.",
+    "flavor": "flat",
+    "effects": [
+      "wash",
+      "neon"
+    ],
+    "tags": [
+      "warm",
+      "bold",
+      "glow"
+    ],
+    "colors": {
+      "frame": "#080303",
+      "base": "#140806",
+      "highlight": "#2a130f",
+      "elevated": "#24100d",
+      "elevatedHighlight": "#381a15",
+      "text": "#f9f4f3",
+      "subdued": "#ba9c97",
+      "accent": "#ff5a2a",
+      "accentText": "#1c0c08",
+      "border": "#391c17"
+    }
+  },
+  {
+    "id": "terminal",
+    "name": "Terminal",
+    "description": "Phosphor green on black, like a late-night CRT.",
+    "flavor": "flat",
+    "effects": [
+      "neon"
+    ],
+    "tags": [
+      "retro",
+      "vivid",
+      "glow"
+    ],
+    "colors": {
+      "frame": "#010402",
+      "base": "#030904",
+      "highlight": "#0b2010",
+      "elevated": "#091a0d",
+      "elevatedHighlight": "#112e18",
+      "text": "#f3f9f5",
+      "subdued": "#97baa0",
+      "accent": "#66ff66",
+      "accentText": "#081c08",
+      "border": "#122f1a"
+    }
+  },
+  {
+    "id": "voltage",
+    "name": "Voltage",
+    "description": "Blackout black with a high-voltage yellow charge.",
+    "flavor": "flat",
+    "effects": [
+      "neon"
+    ],
+    "tags": [
+      "bold",
+      "vivid",
+      "glow"
+    ],
+    "colors": {
+      "frame": "#050504",
+      "base": "#0c0c0a",
+      "highlight": "#1c1c18",
+      "elevated": "#181815",
+      "elevatedHighlight": "#272722",
+      "text": "#f7f7f5",
+      "subdued": "#b0b0a0",
+      "accent": "#ffe94a",
+      "accentText": "#1c1908",
+      "border": "#292923"
+    }
+  },
+  {
+    "id": "blossom",
+    "name": "Blossom",
+    "description": "Spring pinks floating over a plum night sky.",
+    "flavor": "aurora",
+    "effects": [
+      "soft"
+    ],
+    "aurora": [
+      "#ff7eb6",
+      "#c084fc",
+      "#fda4af"
+    ],
+    "tags": [
+      "warm",
+      "animated",
+      "pastel"
+    ],
+    "colors": {
+      "frame": "#0b0609",
+      "base": "#1a0f16",
+      "highlight": "#2c1b26",
+      "elevated": "#281822",
+      "elevatedHighlight": "#382431",
+      "text": "#f8f4f7",
+      "subdued": "#ba97ad",
+      "accent": "#ff7eb6",
+      "accentText": "#1c0811",
+      "border": "#392532"
+    }
+  },
+  {
     "id": "void",
     "name": "Void",
     "description": "True black for OLED screens. Pure white, zero distraction.",
     "flavor": "flat",
-    "tags": ["neutral", "oled", "minimal"],
+    "tags": [
+      "neutral",
+      "oled",
+      "minimal"
+    ],
     "colors": {
       "frame": "#000000",
       "base": "#000000",
@@ -56,30 +317,14 @@
     }
   },
   {
-    "id": "flint",
-    "name": "Flint",
-    "description": "Matte graphite with an electric-blue spark.",
-    "flavor": "flat",
-    "tags": ["neutral", "matte"],
-    "colors": {
-      "frame": "#0a0b0d",
-      "base": "#181a1c",
-      "highlight": "#25272b",
-      "elevated": "#222427",
-      "elevatedHighlight": "#303236",
-      "text": "#f2f3f6",
-      "subdued": "#aeb3ba",
-      "accent": "#5da3ff",
-      "accentText": "#051127",
-      "border": "#2e3034"
-    }
-  },
-  {
     "id": "glacier",
     "name": "Glacier",
     "description": "Frosted night blue with an icy edge.",
     "flavor": "glass",
-    "tags": ["cool", "crisp"],
+    "tags": [
+      "cool",
+      "crisp"
+    ],
     "colors": {
       "frame": "#02060c",
       "base": "#09141d",
@@ -94,11 +339,86 @@
     }
   },
   {
+    "id": "monsoon",
+    "name": "Monsoon",
+    "description": "Rain on the window: slate teal behind misted glass.",
+    "flavor": "glass",
+    "effects": [
+      "wash"
+    ],
+    "tags": [
+      "cool",
+      "calm"
+    ],
+    "colors": {
+      "frame": "#040809",
+      "base": "#0a1416",
+      "highlight": "#15262a",
+      "elevated": "#122225",
+      "elevatedHighlight": "#1c3237",
+      "text": "#f3f8f9",
+      "subdued": "#97b4ba",
+      "accent": "#9fb8c8",
+      "accentText": "#08141c",
+      "border": "#1e3338"
+    }
+  },
+  {
+    "id": "chrome",
+    "name": "Chrome",
+    "description": "Brushed steel and soft silver. Quiet and precise.",
+    "flavor": "flat",
+    "effects": [
+      "soft"
+    ],
+    "tags": [
+      "neutral",
+      "minimal"
+    ],
+    "colors": {
+      "frame": "#070808",
+      "base": "#101214",
+      "highlight": "#1e2125",
+      "elevated": "#1b1d20",
+      "elevatedHighlight": "#272c30",
+      "text": "#f5f6f7",
+      "subdued": "#9fa8b2",
+      "accent": "#cfd6de",
+      "accentText": "#08111c",
+      "border": "#292d31"
+    }
+  },
+  {
+    "id": "flint",
+    "name": "Flint",
+    "description": "Matte graphite with an electric-blue spark.",
+    "flavor": "flat",
+    "tags": [
+      "neutral",
+      "matte"
+    ],
+    "colors": {
+      "frame": "#0a0b0d",
+      "base": "#181a1c",
+      "highlight": "#25272b",
+      "elevated": "#222427",
+      "elevatedHighlight": "#303236",
+      "text": "#f2f3f6",
+      "subdued": "#aeb3ba",
+      "accent": "#5da3ff",
+      "accentText": "#051127",
+      "border": "#2e3034"
+    }
+  },
+  {
     "id": "lagoon",
     "name": "Lagoon",
     "description": "Deep-sea teal with a bright aqua current.",
     "flavor": "flat",
-    "tags": ["cool", "fresh"],
+    "tags": [
+      "cool",
+      "fresh"
+    ],
     "colors": {
       "frame": "#010708",
       "base": "#041619",
@@ -117,7 +437,10 @@
     "name": "Grove",
     "description": "Mossy forest greens with a fresh fern accent.",
     "flavor": "flat",
-    "tags": ["warm", "earthy"],
+    "tags": [
+      "warm",
+      "earthy"
+    ],
     "colors": {
       "frame": "#040703",
       "base": "#0f150c",
@@ -132,11 +455,39 @@
     }
   },
   {
+    "id": "limelight",
+    "name": "Limelight",
+    "description": "Stage black with a sharp lime spotlight.",
+    "flavor": "flat",
+    "effects": [
+      "wash"
+    ],
+    "tags": [
+      "fresh",
+      "vivid"
+    ],
+    "colors": {
+      "frame": "#050603",
+      "base": "#0b0f06",
+      "highlight": "#1b2410",
+      "elevated": "#171e0d",
+      "elevatedHighlight": "#253117",
+      "text": "#f6f9f3",
+      "subdued": "#aaba97",
+      "accent": "#c8ff3d",
+      "accentText": "#161c08",
+      "border": "#273218"
+    }
+  },
+  {
     "id": "gilded",
     "name": "Gilded",
     "description": "Black lacquer trimmed in soft gold.",
     "flavor": "flat",
-    "tags": ["warm", "luxe"],
+    "tags": [
+      "warm",
+      "luxe"
+    ],
     "colors": {
       "frame": "#040403",
       "base": "#11100e",
@@ -155,7 +506,10 @@
     "name": "Lantern",
     "description": "Warm espresso shadows lit by amber lamplight.",
     "flavor": "flat",
-    "tags": ["warm", "cozy"],
+    "tags": [
+      "warm",
+      "cozy"
+    ],
     "colors": {
       "frame": "#090402",
       "base": "#1a100a",
@@ -167,14 +521,20 @@
       "accent": "#ffa14c",
       "accentText": "#251002",
       "border": "#33271f"
-    }
+    },
+    "effects": [
+      "wash"
+    ]
   },
   {
     "id": "sundown",
     "name": "Sundown",
     "description": "Twilight indigo warmed by a coral sun.",
-    "flavor": "soft",
-    "tags": ["warm", "dreamy"],
+    "flavor": "flat",
+    "tags": [
+      "warm",
+      "dreamy"
+    ],
     "colors": {
       "frame": "#04050e",
       "base": "#101120",
@@ -186,14 +546,20 @@
       "accent": "#fd9976",
       "accentText": "#2e110a",
       "border": "#27283b"
-    }
+    },
+    "effects": [
+      "soft"
+    ]
   },
   {
     "id": "cardinal",
     "name": "Cardinal",
     "description": "Wine-dark depths with a bold crimson pulse.",
     "flavor": "flat",
-    "tags": ["warm", "bold"],
+    "tags": [
+      "warm",
+      "bold"
+    ],
     "colors": {
       "frame": "#0d0304",
       "base": "#1f0c0f",
@@ -205,14 +571,20 @@
       "accent": "#f53451",
       "accentText": "#23060a",
       "border": "#3a2225"
-    }
+    },
+    "effects": [
+      "wash"
+    ]
   },
   {
     "id": "petal",
     "name": "Petal",
     "description": "Dusky rose with a soft blush of pink.",
-    "flavor": "soft",
-    "tags": ["warm", "pastel"],
+    "flavor": "flat",
+    "tags": [
+      "warm",
+      "pastel"
+    ],
     "colors": {
       "frame": "#0a0407",
       "base": "#1a0f15",
@@ -224,14 +596,20 @@
       "accent": "#f8a9c7",
       "accentText": "#2c101c",
       "border": "#33252d"
-    }
+    },
+    "effects": [
+      "soft"
+    ]
   },
   {
     "id": "velvet",
     "name": "Velvet",
     "description": "Royal violet with lavender highlights.",
-    "flavor": "soft",
-    "tags": ["cool", "regal"],
+    "flavor": "flat",
+    "tags": [
+      "cool",
+      "regal"
+    ],
     "colors": {
       "frame": "#07040e",
       "base": "#150f20",
@@ -243,14 +621,21 @@
       "accent": "#bf9bfc",
       "accentText": "#190d32",
       "border": "#2d253b"
-    }
+    },
+    "effects": [
+      "soft"
+    ]
   },
   {
     "id": "neon",
     "name": "Neon",
     "description": "Midnight black wired with electric magenta.",
     "flavor": "flat",
-    "tags": ["cool", "vivid", "night"],
+    "tags": [
+      "cool",
+      "vivid",
+      "night"
+    ],
     "colors": {
       "frame": "#040408",
       "base": "#100f18",
@@ -262,6 +647,9 @@
       "accent": "#fb48ce",
       "accentText": "#22051a",
       "border": "#2a2834"
-    }
+    },
+    "effects": [
+      "neon"
+    ]
   }
 ]

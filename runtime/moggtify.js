@@ -98,6 +98,17 @@
       return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
     },
     readableOn(hex) { return Color.luminance(hex) > 0.36 ? "#0b0b0f" : "#ffffff"; },
+    // WCAG contrast ratio between two colors (1 … 21).
+    contrast(a, b) {
+      const x = Color.luminance(a), y = Color.luminance(b);
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+    },
+    hsl(hex) { return Color.rgbToHsl(Color.parse(hex)); },
+    shiftHue(hex, turns) {
+      const c = Color.hsl(hex);
+      c.h = (((c.h + turns) % 1) + 1) % 1;
+      return Color.hslToHex(c);
+    },
     rgbToHsl({ r, g, b }) {
       r /= 255; g /= 255; b /= 255;
       const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -148,6 +159,10 @@
     info: P(`<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2"/><circle cx="12" cy="7.9" r="1.1" ${DOT}/>`),
     external: P('<path d="M13.5 4.5h6v6M19.5 4.5 11 13"/><path d="M18 14.5v3.5a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 5 18V8a1.5 1.5 0 0 1 1.5-1.5H10"/>'),
     wrench: P('<path d="M14.7 6.3a4 4 0 0 0 5 5L21 12.6a6 6 0 0 1-7.6 1.2L7 20.2a2 2 0 0 1-2.8-2.8l6.4-6.4A6 6 0 0 1 11.8 3.4l1.3 1.3a4 4 0 0 0 1.6 1.6z"/>'),
+    studio: P('<path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/>'),
+    copy: P('<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>'),
+    dice: P(`<rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" ${DOT}/><circle cx="15" cy="15" r="1.2" ${DOT}/><circle cx="15" cy="9" r="1.2" ${DOT}/><circle cx="9" cy="15" r="1.2" ${DOT}/>`),
+    remix: P('<path d="M4 8h10a5 5 0 0 1 0 10h-2"/><path d="M8 4 4 8l4 4"/><path d="M12 15l-3 3 3 3"/>'),
     // catalog icons (CatalogItem.icon)
     expand: P('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
     trash: P('<path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/>'),
@@ -193,13 +208,122 @@
     return c;
   }
 
+  /* ---- flavors, effects and the design generator (Design Studio) ---- */
+
+  const FLAVORS = ["flat", "glass", "aurora"];   // what sits behind the panels
+  const EFFECTS = ["soft", "neon", "wash"];      // extras layered on top
+  const COLOR_KEYS = ["frame", "base", "highlight", "elevated", "elevatedHighlight", "text", "subdued", "accent", "accentText", "border"];
+  const MAX_CUSTOM = 24;
+
+  const cleanName = (v, fallback) => {
+    const s = String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 28);
+    return s || fallback;
+  };
+  const cleanEffects = (v) => (Array.isArray(v) ? EFFECTS.filter((e) => v.includes(e)) : []);
+  const cleanFlavor = (v) => (FLAVORS.includes(v) ? v : "flat");
+  const cleanAurora = (v) => (Array.isArray(v) ? v.filter((c) => Color.valid(c)).slice(0, 3).map((c) => Color.norm(c)) : []);
+
+  // Build a complete, readable dark palette from just a background tint and
+  // an accent. Every result satisfies the same contrast rules the built-in
+  // designs are validated against (tools/check-designs.mjs).
+  function generateColors(bg, accent) {
+    const b = Color.hsl(Color.valid(bg) ? bg : "#121212");
+    const h = b.h, s = Math.min(b.s, 0.55), l = Math.max(0, Math.min(b.l, 0.105));
+    const tone = (ds, dl) => Color.hslToHex({ h, s: Math.max(0, Math.min(1, s * ds)), l: Math.max(0, Math.min(1, l + dl)) });
+    const c = {
+      frame: Color.hslToHex({ h, s, l: l * 0.42 }),
+      base: tone(1, 0),
+      highlight: tone(0.9, 0.06),
+      elevated: tone(0.9, 0.045),
+      elevatedHighlight: tone(0.85, 0.1),
+      border: tone(0.8, 0.105),
+      text: Color.hslToHex({ h, s: Math.min(s, 0.3), l: 0.965 }),
+    };
+    // Secondary text: as soft as possible while staying readable on cards.
+    let sl = 0.66;
+    c.subdued = Color.hslToHex({ h, s: Math.min(s, 0.2), l: sl });
+    while (Color.contrast(c.subdued, c.elevated) < 4.6 && sl < 0.95) { sl += 0.02; c.subdued = Color.hslToHex({ h, s: Math.min(s, 0.2), l: sl }); }
+    // Accent: must stand out against the panels and carry readable text.
+    // Only ever lighten it – that converges for every input (a near-white
+    // accent contrasts with the dark panels and with dark ink).
+    let a = Color.norm(Color.valid(accent) ? accent : BRAND), at = "";
+    const inkFor = (x) => Color.hslToHex({ h: Color.hsl(x).h, s: 0.55, l: 0.07 });
+    const textFor = (x) => {
+      const ink = inkFor(x), wi = Color.contrast("#ffffff", x), ki = Color.contrast(ink, x);
+      if (wi >= 4.6 && wi >= ki) return "#ffffff";
+      return ki >= 4.6 ? ink : "";
+    };
+    for (let i = 0; i < 80; i++) {
+      at = textFor(a);
+      if (at && Color.contrast(a, c.base) >= 3.2 && Color.contrast(a, c.frame) >= 3.2) break;
+      a = Color.mix(a, "#ffffff", 0.06);
+    }
+    if (!at) at = inkFor(a);
+    c.accent = a; c.accentText = at;
+    return c;
+  }
+
+  function sanitizeDesign(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const id = typeof raw.id === "string" && /^my-[a-z0-9]{1,24}$/.test(raw.id) ? raw.id : null;
+    if (!id) return null;
+    const src = raw.src && Color.valid(raw.src.bg) && Color.valid(raw.src.accent) ? { bg: Color.norm(raw.src.bg), accent: Color.norm(raw.src.accent) } : null;
+    let colors = null;
+    if (raw.colors && COLOR_KEYS.every((k) => Color.valid(raw.colors[k]))) {
+      colors = {};
+      for (const k of COLOR_KEYS) colors[k] = Color.norm(raw.colors[k]);
+    } else if (src) colors = generateColors(src.bg, src.accent);
+    if (!colors) return null;
+    const d = { id, name: cleanName(raw.name, "My design"), description: "Made in the Design Studio.", colors, flavor: cleanFlavor(raw.flavor), effects: cleanEffects(raw.effects), custom: true };
+    if (src) d.src = src;
+    return d;
+  }
+
+  // The Studio's input: {name, bg, accent, flavor, effects} → a full design.
+  function generateDesign(input, id) {
+    const bg = Color.valid(input && input.bg) ? Color.norm(input.bg) : "#121212";
+    const accent = Color.valid(input && input.accent) ? Color.norm(input.accent) : BRAND;
+    return {
+      id: id || "my-draft", name: cleanName(input && input.name, "My design"), description: "Made in the Design Studio.",
+      colors: generateColors(bg, accent), flavor: cleanFlavor(input && input.flavor), effects: cleanEffects(input && input.effects),
+      custom: true, src: { bg, accent },
+    };
+  }
+
+  // Share codes: "mogg:" + base64url of the Studio input. Tiny and safe to
+  // paste – decoding only ever yields validated colors and whitelisted flags.
+  function encodeDesign(d) {
+    if (!d || !d.src) return "";
+    const payload = { v: 1, n: cleanName(d.name, "My design"), b: d.src.bg, a: d.src.accent, f: cleanFlavor(d.flavor), e: cleanEffects(d.effects) };
+    try {
+      return "mogg:" + btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    } catch (_) { return ""; }
+  }
+  function decodeDesign(code) {
+    const m = /^\s*mogg:([A-Za-z0-9_-]{8,600})\s*$/.exec(String(code || ""));
+    if (!m) return null;
+    try {
+      const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+      const p = JSON.parse(decodeURIComponent(escape(atob(b64 + "===".slice((b64.length + 3) % 4)))));
+      if (!p || p.v !== 1 || !Color.valid(p.b) || !Color.valid(p.a)) return null;
+      return { name: cleanName(p.n, "Shared design"), bg: Color.norm(p.b), accent: Color.norm(p.a), flavor: cleanFlavor(p.f), effects: cleanEffects(p.e) };
+    } catch (_) { return null; }
+  }
+
   function loadState() {
     const s = readJSON(STATE_KEY);
-    const st = { v: 2, design: typeof CFG.design === "string" && CFG.design ? CFG.design : DESIGNS[0].id, accent: "", extras: {} };
+    const st = { v: 2, design: typeof CFG.design === "string" && CFG.design ? CFG.design : DESIGNS[0].id, accent: "", extras: {}, custom: [] };
     if (s && s.v === 2) {
       if (typeof s.design === "string" && s.design) st.design = s.design;
       if (Color.valid(s.accent)) st.accent = s.accent;
       if (s.extras && typeof s.extras === "object") for (const k of Object.keys(s.extras)) st.extras[k] = !!s.extras[k];
+      if (Array.isArray(s.custom)) {
+        const seen = new Set();
+        for (const raw of s.custom.slice(0, MAX_CUSTOM)) {
+          const d = sanitizeDesign(raw);
+          if (d && !seen.has(d.id)) { seen.add(d.id); st.custom.push(d); }
+        }
+      }
     }
     return st;
   }
@@ -271,9 +395,31 @@
   let dynamicAccent = null;           // Vibe Glow
   const glassOwners = new Set();      // "design" (glass flavor) and "ambient"
 
-  function designById(id) { return DESIGNS.find((d) => d.id === id) || null; }
-  function currentDesign() { return designById(state.design) || DESIGNS[0]; }
-  function accentOverride() { return dynamicAccent || (Color.valid(state.accent) ? state.accent : ""); }
+  let previewDesign = null;           // Design Studio: live, unsaved
+  const allDesigns = () => DESIGNS.concat(state.custom);
+  function designById(id) { return DESIGNS.find((d) => d.id === id) || state.custom.find((d) => d.id === id) || null; }
+  function currentDesign() { return previewDesign || designById(state.design) || DESIGNS[0]; }
+
+  // What a design adds on top of its palette.
+  function fxOf(d) {
+    if (isPassthrough(d)) return { backdrop: "", soft: false, neon: false, wash: false };
+    const eff = Array.isArray(d.effects) ? d.effects : [];
+    return {
+      backdrop: d.flavor === "glass" ? "cover" : d.flavor === "aurora" ? "aurora" : "",
+      soft: d.flavor === "soft" || eff.includes("soft"),
+      neon: eff.includes("neon"),
+      wash: eff.includes("wash"),
+    };
+  }
+  // The three aurora lights: the design's own, or derived from its accent.
+  function auroraOf(d, c) {
+    const own = d && Array.isArray(d.aurora) ? d.aurora.filter((x) => Color.valid(x)) : [];
+    return [own[0] || c.accent, own[1] || Color.shiftHue(c.accent, 0.16), own[2] || Color.shiftHue(c.accent, -0.2)];
+  }
+  function accentOverride() {
+    if (previewDesign) return ""; // the Studio shows a design exactly as it is made
+    return dynamicAccent || (Color.valid(state.accent) ? state.accent : "");
+  }
 
   function effectiveColors() {
     const c = colorsOf(currentDesign());
@@ -312,11 +458,12 @@
       `--decorative-base:${at};--decorative-subdued:${pr}}${kids}{--parents-essential-base:${at}}`;
   }
 
-  function paletteCSS(c) {
+  function paletteCSS(c, d) {
     const a = c.accent, at = c.accentText || Color.readableOn(a);
     const light = Color.luminance(c.base) > 0.45;
     const toward = light ? "#000000" : "#ffffff";
-    return `:root:root{${varsBlock(spiceVars(c))}--mogg-accent:${a};--mogg-accent-text:${at};--mogg-rgb-accent:${Color.triple(a)}}` +
+    const au = auroraOf(d, c);
+    return `:root:root{${varsBlock(spiceVars(c))}--mogg-accent:${a};--mogg-accent-text:${at};--mogg-rgb-accent:${Color.triple(a)};--mogg-au1:${Color.norm(au[0])};--mogg-au2:${Color.norm(au[1])};--mogg-au3:${Color.norm(au[2])}}` +
       `.encore-dark-theme.encore-dark-theme,.encore-dark-theme .encore-base-set.encore-base-set{color-scheme:${light ? "light" : "dark"};` +
       `--background-base:var(--spice-main);--background-highlight:var(--spice-main-elevated);--background-press:var(--spice-sidebar);` +
       `--background-elevated-base:var(--spice-main-elevated);--background-elevated-highlight:var(--spice-highlight-elevated);--background-elevated-press:${Color.mix(c.elevated, light ? "#ffffff" : "#000000", 0.25)};` +
@@ -344,9 +491,23 @@
 
   // "soft": larger radii, only on selectors verified in Spotify 1.3.10's CSS.
   const SOFT_CSS =
-    'html.encore-layout-themes[data-mogg-flavor="soft"]{--encore-corner-radius-smaller:4px;--encore-corner-radius-base:6px;--encore-corner-radius-larger:10px;--encore-corner-radius-larger-2:12px;--encore-corner-radius-larger-3:22px;--card-image-radius:10px}' +
-    'html[data-mogg-flavor="soft"] .Root__nav-bar,html[data-mogg-flavor="soft"] .Root__main-view,html[data-mogg-flavor="soft"] .main-yourLibraryX-entryPoints{border-radius:16px}' +
-    'html[data-mogg-flavor="soft"] .main-trackList-trackListRow{border-radius:8px}';
+    'html.encore-layout-themes[data-mogg-fx~="soft"]{--encore-corner-radius-smaller:4px;--encore-corner-radius-base:6px;--encore-corner-radius-larger:10px;--encore-corner-radius-larger-2:12px;--encore-corner-radius-larger-3:22px;--card-image-radius:10px}' +
+    'html[data-mogg-fx~="soft"] .Root__nav-bar,html[data-mogg-fx~="soft"] .Root__main-view,html[data-mogg-fx~="soft"] .main-yourLibraryX-entryPoints{border-radius:16px}' +
+    'html[data-mogg-fx~="soft"] .main-trackList-trackListRow{border-radius:8px}';
+
+  // "neon": the accent glows – a lit outline around the panels and a halo on
+  // the play button. Only box-shadows on selectors verified in 1.3.10.
+  const NEON = "rgba(var(--spice-rgb-button-active),";
+  const NEON_CSS =
+    `html[data-mogg-fx~="neon"] .Root__main-view,html[data-mogg-fx~="neon"] .main-yourLibraryX-entryPoints{box-shadow:0 0 0 1px ${NEON}.3),0 0 28px -6px ${NEON}.5)}` +
+    `html[data-mogg-fx~="neon"] [data-testid="control-button-playpause"]{box-shadow:0 0 0 1px ${NEON}.55),0 0 22px 1px ${NEON}.6)}` +
+    `html[data-mogg-fx~="neon"] .main-globalNav-searchInputContainer .main-topBar-searchBar{box-shadow:0 0 0 1px ${NEON}.24),0 0 20px -8px ${NEON}.5)}`;
+
+  // "wash": a soft veil of the accent color over the panels.
+  const WASH_CSS =
+    `html[data-mogg-fx~="wash"] .main-yourLibraryX-entryPoints{background-image:linear-gradient(180deg,${NEON}.14),transparent 48%)}` +
+    `html[data-mogg-fx~="wash"] .Root__main-view{background-image:linear-gradient(180deg,${NEON}.11),transparent 440px)}` +
+    `html[data-mogg-fx~="wash"] .Root__now-playing-bar{background-image:linear-gradient(90deg,${NEON}.1),transparent 40%)}`;
 
   // "glass" (and the Ambient extra): the app frame turns transparent and the
   // panels translucent over a blurred cover-art backdrop. Spice variables stay
@@ -359,7 +520,17 @@
     ".mogg-backdrop>i{position:absolute;inset:-14%;background-position:center;background-size:cover;filter:blur(72px) saturate(1.45) brightness(.62);transform:scale(1.12);opacity:0;transition:opacity 1.2s ease}" +
     ".mogg-backdrop>i.on{opacity:1}" +
     ".mogg-backdrop::after{content:\"\";position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--spice-rgb-sidebar),.12),rgba(var(--spice-rgb-sidebar),.5))}" +
-    "@media (prefers-reduced-motion:reduce){.mogg-backdrop>i{transition:none}}";
+    // "aurora": three slow lights in the design's colors instead of cover art.
+    ".mogg-backdrop>b{position:absolute;border-radius:50%;filter:blur(90px);opacity:0;transition:opacity 1.2s ease;will-change:transform}" +
+    '.mogg-backdrop[data-kind="aurora"]>b{opacity:.5}' +
+    '.mogg-backdrop[data-kind="aurora"]>i{opacity:0!important}' +
+    ".mogg-backdrop>b:nth-of-type(1){width:62vw;height:62vw;left:-14vw;top:-26vw;background:var(--mogg-au1,#1ed760);animation:mogg-au1 28s ease-in-out infinite alternate}" +
+    ".mogg-backdrop>b:nth-of-type(2){width:54vw;height:54vw;right:-16vw;top:6vh;background:var(--mogg-au2,#38bdf8);animation:mogg-au2 34s ease-in-out infinite alternate}" +
+    ".mogg-backdrop>b:nth-of-type(3){width:58vw;height:58vw;left:22vw;bottom:-34vw;background:var(--mogg-au3,#a78bfa);animation:mogg-au3 40s ease-in-out infinite alternate}" +
+    "@keyframes mogg-au1{to{transform:translate(16vw,12vh) scale(1.15)}}" +
+    "@keyframes mogg-au2{to{transform:translate(-18vw,14vh) scale(.9)}}" +
+    "@keyframes mogg-au3{to{transform:translate(-10vw,-16vh) scale(1.2)}}" +
+    "@media (prefers-reduced-motion:reduce){.mogg-backdrop>i,.mogg-backdrop>b{transition:none;animation:none}}";
 
   // Registered so Vibe Glow can glide between accents instead of snapping.
   const ACCENT_ANIM_CSS =
@@ -372,12 +543,13 @@
     node: null, url: "", front: 0,
     mount() {
       if (this.node || !document.body) return;
-      this.node = el("div", { class: "mogg-backdrop", "aria-hidden": "true" }, el("i"), el("i"));
+      this.node = el("div", { class: "mogg-backdrop", "aria-hidden": "true" }, el("i"), el("i"), el("b"), el("b"), el("b"));
       document.body.prepend(this.node);
       this.url = "";
       this.set(Player.data().cover);
     },
     unmount() { if (this.node) { this.node.remove(); this.node = null; this.url = ""; } },
+    kind(k) { if (this.node && this.node.dataset.kind !== k) this.node.dataset.kind = k; },
     set(url) {
       if (!this.node || !url || url === this.url) return;
       this.url = url;
@@ -394,15 +566,25 @@
     },
   };
 
-  function renderFlavor(flavor) {
+  let currentFx = { backdrop: "", soft: false, neon: false, wash: false };
+  function renderFlavor() {
     const root = document.documentElement;
+    const fx = currentFx;
     const glass = glassOwners.size > 0;
     let css = "";
-    if (flavor === "soft") css += SOFT_CSS;
+    if (fx.soft) css += SOFT_CSS;
+    if (fx.neon) css += NEON_CSS;
+    if (fx.wash) css += WASH_CSS;
     if (glass) css += GLASS_CSS;
     setStyle("flavor", css);
-    if (glass) { root.setAttribute("data-mogg-glass", ""); backdrop.mount(); }
-    else { root.removeAttribute("data-mogg-glass"); backdrop.unmount(); }
+    const tokens = ["soft", "neon", "wash"].filter((k) => fx[k]);
+    if (tokens.length) root.setAttribute("data-mogg-fx", tokens.join(" ")); else root.removeAttribute("data-mogg-fx");
+    if (glass) {
+      root.setAttribute("data-mogg-glass", "");
+      backdrop.mount();
+      // The Ambient extra always shows cover art; otherwise the design decides.
+      backdrop.kind(glassOwners.has("ambient") || fx.backdrop !== "aurora" ? "cover" : "aurora");
+    } else { root.removeAttribute("data-mogg-glass"); backdrop.unmount(); }
   }
 
   function renderDesign() {
@@ -411,11 +593,12 @@
     const pass = isPassthrough(d);
     const override = accentOverride();
     const c = effectiveColors();
-    setStyle("design", pass ? (override ? accentOnlyCSS(override) : "") : paletteCSS(c));
-    const flavor = pass ? "" : (d.flavor === "glass" || d.flavor === "soft" ? d.flavor : "");
+    setStyle("design", pass ? (override ? accentOnlyCSS(override) : "") : paletteCSS(c, d));
+    currentFx = fxOf(d);
+    const flavor = pass ? "" : (currentFx.backdrop === "cover" ? "glass" : currentFx.backdrop === "aurora" ? "aurora" : currentFx.soft ? "soft" : "");
     if (flavor) root.setAttribute("data-mogg-flavor", flavor); else root.removeAttribute("data-mogg-flavor");
-    if (flavor === "glass") glassOwners.add("design"); else glassOwners.delete("design");
-    renderFlavor(flavor);
+    if (currentFx.backdrop) glassOwners.add("design"); else glassOwners.delete("design");
+    renderFlavor();
     if (pass) root.removeAttribute("data-mogg-design"); else root.setAttribute("data-mogg-design", d.id);
     bus.emit("designchange", { design: d, colors: c, accent: override });
     bus.emit("themechange", { theme: d, accent: override });
@@ -431,11 +614,53 @@
     let t = null;
     try { t = document.startViewTransition(fn); } catch (_) { root.removeAttribute("data-mogg-vt"); fn(); return; }
     const done = () => root.removeAttribute("data-mogg-vt");
+    const quiet = () => {};
+    // A skipped transition (hidden window, timeout) rejects these; the design
+    // itself is applied either way, so there is nothing to report.
+    if (t.ready && t.ready.catch) t.ready.catch(quiet);
+    if (t.updateCallbackDone && t.updateCallbackDone.catch) t.updateCallbackDone.catch(quiet);
     t.finished.then(done, done);
   }
 
   const design = {
-    list: () => DESIGNS.slice(),
+    list: allDesigns,
+    custom: () => state.custom.slice(),
+    fx: fxOf,
+    generate: generateDesign,
+    encode: encodeDesign,
+    decode: decodeDesign,
+    // Live-try a design without saving it (null ends the preview).
+    preview(d) {
+      const next = d && d.colors ? d : null;
+      if (!next && !previewDesign) return;
+      previewDesign = next;
+      renderDesign();
+    },
+    isPreviewing: () => !!previewDesign,
+    // Save a Studio design to "Your designs" and switch to it.
+    save(d) {
+      const keep = d && typeof d.id === "string" && d.id !== "my-draft" && /^my-[a-z0-9]{1,24}$/.test(d.id);
+      const clean = sanitizeDesign(Object.assign({}, d, { id: keep ? d.id : "my-" + Date.now().toString(36) }));
+      if (!clean) return null;
+      const i = state.custom.findIndex((x) => x.id === clean.id);
+      if (i >= 0) state.custom[i] = clean;
+      else { if (state.custom.length >= MAX_CUSTOM) return null; state.custom.push(clean); }
+      previewDesign = null;
+      state.design = clean.id;
+      state.accent = ""; // show the new design with its own accent
+      saveState();
+      crossfade(renderDesign);
+      return clean;
+    },
+    remove(id) {
+      const i = state.custom.findIndex((x) => x.id === id);
+      if (i < 0) return false;
+      state.custom.splice(i, 1);
+      if (state.design === id) state.design = DESIGNS[0].id;
+      saveState();
+      renderDesign();
+      return true;
+    },
     get: designById,
     current: currentDesign,
     colors: effectiveColors,
@@ -445,7 +670,8 @@
     set(id, opts) {
       const d = designById(id);
       if (!d) return false;
-      if (d.id === state.design && designById(state.design)) return true;
+      if (d.id === state.design && designById(state.design) && !previewDesign) return true;
+      previewDesign = null;
       state.design = d.id; saveState();
       if (opts && opts.animate === false) renderDesign(); else crossfade(renderDesign);
       return true;
@@ -472,10 +698,10 @@
     glass(owner, on) {
       const before = glassOwners.size;
       if (on) glassOwners.add(String(owner)); else glassOwners.delete(String(owner));
-      if (glassOwners.size !== before) renderFlavor(document.documentElement.getAttribute("data-mogg-flavor") || "");
+      if (glassOwners.size !== before || String(owner) === "ambient") renderFlavor();
     },
     isGlass: () => glassOwners.size > 0,
-    css: (d) => (isPassthrough(d) ? "" : paletteCSS(colorsOf(d))),
+    css: (d) => (isPassthrough(d) ? "" : paletteCSS(colorsOf(d), d)),
   };
   // Legacy names used by older extras.
   const themeApi = Object.assign({}, design);
@@ -930,42 +1156,101 @@
     ["Pink", "#f472b6"], ["Ember", "#ff7a45"], ["Gold", "#f5c451"], ["Cherry", "#f43f5e"], ["White", "#ffffff"],
   ];
 
-  function designPreview(d) {
-    const c = colorsOf(d);
-    const glass = !isPassthrough(d) && d.flavor === "glass";
-    const soft = !isPassthrough(d) && d.flavor === "soft";
+  const BG_PRESETS = [
+    ["Graphite", "#121212"], ["Void", "#000000"], ["Midnight", "#0b1020"], ["Ocean", "#06161a"],
+    ["Forest", "#0c160d"], ["Plum", "#170f20"], ["Wine", "#1c0c10"], ["Espresso", "#19110b"],
+  ];
+
+  function designPreview(d, big) {
+    const c = colorsOf(d), fx = fxOf(d);
+    const veil = !!fx.backdrop;
+    const au = auroraOf(d, c);
+    const fxbg = fx.backdrop === "aurora"
+      ? `radial-gradient(circle at 16% 12%,${Color.alpha(au[0], 0.75)},transparent 50%),radial-gradient(circle at 90% 34%,${Color.alpha(au[1], 0.65)},transparent 52%),radial-gradient(circle at 46% 104%,${Color.alpha(au[2], 0.65)},transparent 56%)`
+      : fx.backdrop === "cover"
+        ? `radial-gradient(circle at 22% 18%,${Color.alpha(c.accent, 0.65)},transparent 52%),radial-gradient(circle at 86% 88%,${Color.alpha(Color.mix(c.accent, "#ffffff", 0.35), 0.45)},transparent 55%)`
+        : "none";
     const vars = {
-      "--f": c.frame, "--b": glass ? Color.alpha(c.base, 0.5) : c.base, "--h": c.highlight, "--e": c.elevated,
-      "--t": c.text, "--s": c.subdued, "--a": c.accent, "--g": Color.mix(c.base, c.accent, 0.34),
-      "--r": soft ? "7px" : "3px", "--fx": glass ? `radial-gradient(circle at 22% 18%,${Color.alpha(c.accent, 0.65)},transparent 52%),radial-gradient(circle at 86% 88%,${Color.alpha(Color.mix(c.accent, "#ffffff", 0.35), 0.45)},transparent 55%)` : "none",
+      "--f": c.frame, "--b": veil ? Color.alpha(c.base, 0.5) : c.base, "--h": c.highlight, "--e": c.elevated,
+      "--t": c.text, "--s": c.subdued, "--a": c.accent, "--an": Color.alpha(c.accent, 0.5),
+      "--g": Color.mix(c.base, c.accent, fx.wash ? 0.55 : 0.34), "--r": fx.soft ? "7px" : "3px", "--fx": fxbg,
     };
+    const cls = "mogg-pv" + (veil ? " glass" : "") + (fx.soft ? " soft" : "") + (fx.neon ? " neon" : "") + (big ? " xl" : "");
     const row = () => el("i", { class: "pv-row" }, el("i"), el("i"));
-    return el("span", { class: "mogg-pv" + (glass ? " glass" : "") + (soft ? " soft" : ""), style: Object.entries(vars).map(([k, v]) => k + ":" + v).join(";"), "aria-hidden": "true" },
+    return el("span", { class: cls, style: Object.entries(vars).map(([k, v]) => k + ":" + v).join(";"), "aria-hidden": "true" },
       el("i", { class: "pv-top" }, el("i", { class: "pv-search" }), el("i", { class: "pv-av" })),
       el("i", { class: "pv-lib" }, row(), row(), row(), row()),
       el("i", { class: "pv-main" }, el("i", { class: "pv-title" }), el("i", { class: "pv-cards" }, el("i"), el("i"), el("i"))),
       el("i", { class: "pv-bar" }, el("i", { class: "pv-cov" }), el("i", { class: "pv-prog" }, el("i")), el("i", { class: "pv-play" })));
   }
 
-  function flavorTag(d) {
-    if (isPassthrough(d)) return el("span", { class: "mogg-tag" }, "Default");
-    if (d.flavor === "glass") return el("span", { class: "mogg-tag" }, "Glass");
-    if (d.flavor === "soft") return el("span", { class: "mogg-tag" }, "Soft");
-    return null;
+  // At most two tags: whose it is / what makes it special.
+  function designTags(d) {
+    if (isPassthrough(d)) return [el("span", { class: "mogg-tag" }, "Default")];
+    const fx = fxOf(d), tags = [];
+    if (d.custom) tags.push(el("span", { class: "mogg-tag yours" }, "Yours"));
+    const kind = fx.backdrop === "aurora" ? "Aurora" : fx.backdrop === "cover" ? "Glass" : fx.neon ? "Neon" : fx.wash ? "Wash" : fx.soft ? "Soft" : "";
+    if (kind) tags.push(el("span", { class: "mogg-tag" }, kind));
+    return tags;
+  }
+
+  const FILTERS = [
+    ["all", "All", () => true],
+    ["calm", "Calm", (d) => { const f = fxOf(d); return !f.backdrop && !f.neon; }],
+    ["glass", "Glass", (d) => fxOf(d).backdrop === "cover"],
+    ["aurora", "Aurora", (d) => fxOf(d).backdrop === "aurora"],
+    ["neon", "Neon", (d) => fxOf(d).neon],
+    ["yours", "Yours", (d) => !!d.custom],
+  ];
+
+  function copyText(text) {
+    const S = spice();
+    try { if (S && S.Platform && S.Platform.ClipboardAPI && typeof S.Platform.ClipboardAPI.copy === "function") { S.Platform.ClipboardAPI.copy(text); return true; } } catch (_) {}
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).catch(() => {}); return true; } } catch (_) {}
+    try {
+      const ta = el("textarea", { style: { position: "fixed", opacity: "0" } });
+      ta.value = text; document.body.append(ta); ta.select();
+      const ok = document.execCommand("copy"); ta.remove();
+      return ok;
+    } catch (_) { return false; }
   }
 
   function renderDesignsTab() {
+    let filter = settings.get("hub", "filter", "all");
+    if (!FILTERS.some((f) => f[0] === filter)) filter = "all";
     const cards = new Map();
     const grid = el("div", { class: "mogg-designs" });
-    for (const d of DESIGNS) {
-      const btn = el("button", { type: "button", class: "mogg-design", "aria-pressed": "false", title: d.description || d.name || d.id, onclick: () => design.set(d.id) },
-        designPreview(d),
-        el("span", { class: "mogg-design-meta" },
-          el("span", { class: "nm" }, el("span", { class: "label" }, d.name || d.id), flavorTag(d)),
-          el("span", { class: "ds" }, d.description || "")),
-        el("span", { class: "mogg-check", html: ICONS.check }));
-      cards.set(d.id, btn);
-      grid.append(btn);
+    const filterRow = el("div", { class: "mogg-filters", role: "group", "aria-label": "Filter designs" });
+    const empty = el("p", { class: "mogg-empty", hidden: true }, "Nothing here yet. Make your first design in the Studio.");
+
+    function buildFilters() {
+      filterRow.textContent = "";
+      for (const [id, label] of FILTERS) {
+        if (id === "yours" && !state.custom.length && filter !== "yours") continue;
+        filterRow.append(el("button", { type: "button", class: "mogg-chip", "aria-pressed": String(filter === id), onclick: () => { filter = id; settings.set("hub", "filter", id); buildFilters(); buildGrid(); update(); } }, label));
+      }
+    }
+    function buildGrid() {
+      grid.textContent = "";
+      cards.clear();
+      const test = (FILTERS.find((f) => f[0] === filter) || FILTERS[0])[2];
+      const list = allDesigns().filter((d) => test(d));
+      for (const d of list) {
+        const btn = el("button", { type: "button", class: "mogg-design", "aria-pressed": "false", title: d.description || d.name || d.id, onclick: () => design.set(d.id) },
+          designPreview(d),
+          el("span", { class: "mogg-design-meta" },
+            el("span", { class: "nm" }, el("span", { class: "label" }, d.name || d.id), designTags(d)),
+            el("span", { class: "ds" }, d.description || "")),
+          el("span", { class: "mogg-check", html: ICONS.check }));
+        cards.set(d.id, btn);
+        const wrap = el("div", { class: "mogg-design-wrap" }, btn);
+        if (d.custom) {
+          wrap.append(el("button", { type: "button", class: "mogg-design-del", "aria-label": "Delete " + (d.name || "design"), title: "Delete this design", html: ICONS.trash,
+            onclick: () => { if (design.remove(d.id)) { toast("Deleted “" + (d.name || "design") + "”"); buildFilters(); buildGrid(); update(); } } }));
+        }
+        grid.append(wrap);
+      }
+      empty.hidden = list.length > 0;
     }
 
     const swatches = new Map();
@@ -985,7 +1270,11 @@
     const vibeNote = el("p", { class: "mogg-inline-note" });
 
     const node = el("div", null,
-      grid,
+      filterRow, grid, empty,
+      el("div", { class: "mogg-hero", style: "margin-top:22px" },
+        el("span", { class: "mogg-hero-ico", html: ICONS.studio }),
+        el("div", { class: "txt" }, el("h3", null, "Make your own"), el("p", null, "Pick a background and an accent – the Studio builds the rest, readable by design.")),
+        el("button", { type: "button", class: "mogg-btn primary", onclick: () => hub.select("studio", { focus: true }) }, "Open Studio", el("span", { class: "i", html: ICONS.arrow }))),
       el("section", { class: "mogg-sec" },
         el("div", { class: "mogg-sec-head" }, el("div", null, el("h3", null, "Accent"), el("p", null, "Give any design your own highlight color."))),
         vibeNote, row),
@@ -1009,8 +1298,152 @@
       vibeNote.hidden = !vibe;
       vibeNote.textContent = vibe ? "Vibe Glow is on, so the accent follows the cover art. Your pick comes back when you turn it off." : "";
     }
+    buildFilters();
+    buildGrid();
     update();
     return { node, update };
+  }
+
+  /* ---- Design Studio: make your own design ---- */
+
+  function renderStudioTab() {
+    const saved = settings.get("studio", "draft", null) || {};
+    const draft = {
+      name: cleanName(saved.name, ""),
+      bg: Color.valid(saved.bg) ? Color.norm(saved.bg) : "#0b1020",
+      accent: Color.valid(saved.accent) ? Color.norm(saved.accent) : "#a78bfa",
+      flavor: cleanFlavor(saved.flavor),
+      effects: cleanEffects(saved.effects),
+    };
+    let live = settings.get("studio", "live", true) !== false;
+    const current = () => generateDesign(Object.assign({}, draft, { name: draft.name || "My design" }), "my-draft");
+
+    const previewBox = el("div", { class: "mogg-studio-pv" });
+    const facts = el("div", { class: "mogg-studio-facts" });
+    const codeField = el("input", { class: "mogg-input mogg-code", type: "text", readonly: true, "aria-label": "Share code", onfocus: (e) => e.target.select() });
+
+    // -- color control: presets + hue slider + hex field
+    function colorControl(label, key, presets, hueToHex) {
+      const chips = new Map();
+      const rowEl = el("div", { class: "mogg-swatches", role: "group", "aria-label": label });
+      for (const [name, hex] of presets) {
+        const b = el("button", { type: "button", class: "mogg-sw", style: "--c:" + hex, title: name, "aria-label": name, "aria-pressed": "false", onclick: () => { draft[key] = Color.norm(hex); sync(); } });
+        chips.set(Color.norm(hex), b);
+        rowEl.append(b);
+      }
+      const hex = el("input", { class: "mogg-input mogg-hex", type: "text", maxlength: "7", spellcheck: "false", "aria-label": label + " hex color" });
+      const commit = () => { const v = hex.value.trim(); const full = v[0] === "#" ? v : "#" + v; if (Color.valid(full)) { draft[key] = Color.norm(full); sync(); } else hex.value = draft[key]; };
+      hex.addEventListener("change", commit);
+      hex.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); commit(); } });
+      rowEl.append(hex);
+      const hue = el("input", { class: "mogg-hue", type: "range", min: "0", max: "359", step: "1", "aria-label": label + " hue" });
+      hue.addEventListener("input", () => { draft[key] = hueToHex(Number(hue.value) / 360); sync(); });
+      const field = el("div", { class: "mogg-field" }, el("span", { class: "lbl" }, label), rowEl, hue);
+      return { field, update() {
+        for (const [h, b] of chips) b.setAttribute("aria-pressed", String(h === draft[key]));
+        if (document.activeElement !== hex) hex.value = draft[key];
+        if (document.activeElement !== hue) hue.value = String(Math.round(Color.hsl(draft[key]).h * 359));
+      } };
+    }
+    const bgCtl = colorControl("Background", "bg", BG_PRESETS, (h) => Color.hslToHex({ h, s: 0.42, l: 0.085 }));
+    const acCtl = colorControl("Accent", "accent", ACCENTS, (h) => Color.hslToHex({ h, s: 0.9, l: 0.64 }));
+
+    // -- style + effects
+    const flavorBtns = [["flat", "Solid"], ["glass", "Glass"], ["aurora", "Aurora"]].map(([id, label]) =>
+      el("button", { type: "button", class: "mogg-chip", "data-v": id, "aria-pressed": "false", onclick: () => { draft.flavor = id; sync(); } }, label));
+    const effectBtns = [["soft", "Soft corners"], ["neon", "Neon glow"], ["wash", "Color wash"]].map(([id, label]) =>
+      el("button", { type: "button", class: "mogg-chip", "data-v": id, "aria-pressed": "false", onclick: () => {
+        draft.effects = draft.effects.includes(id) ? draft.effects.filter((x) => x !== id) : cleanEffects(draft.effects.concat(id)); sync();
+      } }, label));
+
+    const nameInput = el("input", { class: "mogg-input", type: "text", maxlength: "28", placeholder: "My design", "aria-label": "Design name", style: "margin-top:0" });
+    nameInput.value = draft.name;
+    nameInput.addEventListener("input", () => { draft.name = nameInput.value; persist(); refreshCode(); });
+
+    const liveSwitch = el("button", { type: "button", class: "mogg-switch", role: "switch", "aria-checked": String(live), "aria-label": "Preview in Spotify while editing",
+      onclick: () => { live = !live; settings.set("studio", "live", live); liveSwitch.setAttribute("aria-checked", String(live)); if (live) design.preview(current()); else design.preview(null); } });
+
+    const importInput = el("input", { class: "mogg-input mogg-code", type: "text", placeholder: "Paste a share code (mogg:…)", "aria-label": "Share code to import", style: "margin-top:0;flex:1;min-width:0" });
+    const doImport = () => {
+      const got = decodeDesign(importInput.value);
+      if (!got) { toast("That code doesn't look right."); return; }
+      Object.assign(draft, got);
+      nameInput.value = draft.name;
+      importInput.value = "";
+      sync();
+      toast("Design loaded – tweak it or save it.");
+    };
+    importInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doImport(); } });
+
+    function persist() { settings.set("studio", "draft", { name: draft.name, bg: draft.bg, accent: draft.accent, flavor: draft.flavor, effects: draft.effects.slice() }); }
+    function refreshCode() { codeField.value = encodeDesign(current()); }
+    function sync() {
+      persist();
+      const d = current();
+      previewBox.textContent = "";
+      previewBox.append(designPreview(d, true));
+      const c = d.colors;
+      facts.textContent = "";
+      facts.append(el("span", null, "Text ", el("b", null, Color.contrast(c.text, c.base).toFixed(1) + " : 1")),
+        el("span", null, "Accent ", el("b", null, Color.contrast(c.accent, c.base).toFixed(1) + " : 1")),
+        el("span", null, "Always readable"));
+      bgCtl.update(); acCtl.update();
+      for (const b of flavorBtns) b.setAttribute("aria-pressed", String(b.dataset.v === draft.flavor));
+      for (const b of effectBtns) b.setAttribute("aria-pressed", String(draft.effects.includes(b.dataset.v)));
+      refreshCode();
+      if (live) design.preview(d);
+    }
+
+    const remix = () => {
+      const cur = designById(state.design) || DESIGNS[0];
+      const c = colorsOf(cur), fx = fxOf(cur);
+      draft.bg = cur.src ? cur.src.bg : c.base;
+      draft.accent = cur.src ? cur.src.accent : c.accent;
+      draft.flavor = fx.backdrop === "cover" ? "glass" : fx.backdrop === "aurora" ? "aurora" : "flat";
+      draft.effects = EFFECTS.filter((e) => fx[e]);
+      draft.name = cleanName((cur.name || "Design") + " remix", "My design");
+      nameInput.value = draft.name;
+      sync();
+    };
+    const surprise = () => {
+      const h = Math.random();
+      draft.bg = Color.hslToHex({ h, s: 0.25 + Math.random() * 0.3, l: 0.05 + Math.random() * 0.05 });
+      draft.accent = Color.hslToHex({ h: (h + 0.33 + Math.random() * 0.34) % 1, s: 0.8 + Math.random() * 0.2, l: 0.6 + Math.random() * 0.1 });
+      draft.flavor = FLAVORS[Math.floor(Math.random() * FLAVORS.length)];
+      draft.effects = EFFECTS.filter(() => Math.random() < 0.35);
+      sync();
+    };
+    const save = () => {
+      const made = design.save(Object.assign(current(), { id: undefined, name: draft.name || "My design " + (state.custom.length + 1) }));
+      if (!made) { toast(state.custom.length >= MAX_CUSTOM ? "You already have " + MAX_CUSTOM + " designs – delete one first." : "Couldn't save this design."); return; }
+      toast("Saved “" + made.name + "” to your designs");
+      draft.name = ""; persist();
+      settings.set("hub", "filter", "all");
+      hub.select("designs", { focus: true });
+    };
+
+    const node = el("div", { class: "mogg-studio" },
+      el("div", { class: "mogg-studio-main" },
+        bgCtl.field, acCtl.field,
+        el("div", { class: "mogg-field" }, el("span", { class: "lbl" }, "Style"), el("div", { class: "mogg-chips", role: "group", "aria-label": "Style" }, flavorBtns)),
+        el("div", { class: "mogg-field" }, el("span", { class: "lbl" }, "Effects"), el("div", { class: "mogg-chips", role: "group", "aria-label": "Effects" }, effectBtns)),
+        el("div", { class: "mogg-field" }, el("span", { class: "lbl" }, "Start from"),
+          el("div", { class: "mogg-chips" },
+            el("button", { type: "button", class: "mogg-btn", onclick: remix }, el("span", { class: "i", html: ICONS.remix }), "Current design"),
+            el("button", { type: "button", class: "mogg-btn", onclick: surprise }, el("span", { class: "i", html: ICONS.dice }), "Surprise me"))),
+        el("div", { class: "mogg-field" }, el("span", { class: "lbl" }, "Import"),
+          el("div", { class: "mogg-studio-row" }, importInput, el("button", { type: "button", class: "mogg-btn", onclick: doImport }, "Load")))),
+      el("div", { class: "mogg-studio-side" },
+        previewBox, facts,
+        el("div", { class: "mogg-field", style: "margin:8px 0 0" }, el("span", { class: "lbl" }, "Name"), nameInput),
+        el("div", { class: "mogg-row", style: "margin-top:4px" }, el("p", null, "Preview in Spotify while editing"), liveSwitch),
+        el("button", { type: "button", class: "mogg-btn primary", style: "width:100%;margin-top:6px", onclick: save }, "Save design", el("span", { class: "i", html: ICONS.check })),
+        el("div", { class: "mogg-field", style: "margin:14px 0 0" }, el("span", { class: "lbl" }, "Share code"),
+          el("div", { class: "mogg-studio-row" }, el("div", { style: "flex:1;min-width:0" }, codeField),
+            el("button", { type: "button", class: "mogg-btn", "aria-label": "Copy share code", onclick: () => toast(copyText(codeField.value) ? "Share code copied" : "Select the code and press Ctrl+C") }, el("span", { class: "i", html: ICONS.copy }), "Copy")))));
+    codeField.style.marginTop = "0";
+    sync();
+    return { node, update() {}, dispose() { design.preview(null); } };
   }
 
   function renderSection(s) {
@@ -1117,6 +1550,7 @@
 
   const TABS = [
     { id: "designs", label: "Designs", icon: ICONS.designs, title: "Designs", sub: "Recolor Spotify in one click. Changes apply live and stay after restarts.", render: renderDesignsTab },
+    { id: "studio", label: "Studio", icon: ICONS.studio, title: "Design Studio", sub: "Mix your own design. Two colors are enough – Moggtify builds the rest.", render: renderStudioTab },
     { id: "extras", label: "Extras", icon: ICONS.extras, title: "Extras", sub: "Small upgrades that run inside Spotify. Switch them on or off any time.", render: renderExtrasTab },
     { id: "installed", label: "Installed", icon: ICONS.installed, title: "Installed", sub: "What Moggtify set up in Spotify, and where to find it.", render: renderInstalledTab },
     { id: "about", label: "About", icon: ICONS.about, title: "About", sub: "Version, source and help.", render: renderAboutTab },
@@ -1149,6 +1583,7 @@
       const root = this.root;
       if (!root || root.dataset.state === "closing") return;
       root.dataset.state = "closing";
+      this.leave();
       Topbar.setActive(false);
       clearTimeout(this.closeTimer);
       this.closeTimer = setTimeout(() => { if (this.root === root) this.destroy(); }, reducedMotion() ? 0 : 200);
@@ -1158,7 +1593,13 @@
       if (target) { try { target.focus({ preventScroll: true }); } catch (_) {} }
       bus.emit("hubclose");
     },
+    leave() {
+      const v = this.current;
+      this.current = null;
+      if (v && typeof v.dispose === "function") { try { v.dispose(); } catch (e) { warn("hub dispose", e); } }
+    },
     destroy() {
+      this.leave();
       if (this.root) this.root.remove();
       this.root = this.dialog = this.panel = this.titleEl = this.subEl = this.current = null;
       this.tabButtons = [];
@@ -1206,6 +1647,7 @@
       this.titleEl.textContent = t.title;
       this.subEl.textContent = t.sub;
       this.panel.setAttribute("aria-labelledby", "mogg-tab-" + t.id);
+      this.leave();
       let view;
       try { view = t.render(); } catch (e) { warn("hub tab", t.id, e); view = { node: el("p", { class: "mogg-empty" }, "This section failed to load.") }; }
       this.current = view;
@@ -1366,6 +1808,35 @@ background:linear-gradient(150deg,#8af6bb 0%,#1ed760 50%,#0f8f3f 100%);box-shado
 .mogg-pv .pv-prog i{width:42%;height:100%;border-radius:2px;background:var(--a)}
 .mogg-pv .pv-play{flex:none;width:10px;height:10px;border-radius:50%;background:var(--t)}
 
+.mogg-pv.neon .pv-lib,.mogg-pv.neon .pv-main{box-shadow:0 0 0 1px var(--an),0 0 9px -2px var(--a)}
+.mogg-pv.neon .pv-play{background:var(--a);box-shadow:0 0 7px var(--a)}
+.mogg-pv.xl{zoom:1.9}
+.mogg-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.mogg-design-wrap{position:relative;display:flex;min-width:0}
+.mogg-design-wrap>.mogg-design{flex:1}
+.mogg-design-del{all:unset;box-sizing:border-box;cursor:pointer;position:absolute;top:14px;left:14px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.62);color:#fff;opacity:0;transform:scale(.8);transition:opacity .15s ease,transform .2s var(--mh-ease),background-color .15s ease}
+.mogg-design-wrap:hover .mogg-design-del,.mogg-design-del:focus-visible{opacity:1;transform:none}
+.mogg-design-del:hover{background:#e22134}
+.mogg-design-del svg{width:14px;height:14px}
+.mogg-tag.yours{background:rgba(var(--mh-accent-rgb),.18);color:var(--mh-accent)}
+.mogg-empty[hidden]{display:none}
+
+.mogg-studio{display:grid;grid-template-columns:minmax(0,1fr) 318px;gap:26px;align-items:start}
+.mogg-studio-side{position:sticky;top:0;display:grid;gap:10px;padding:14px;border-radius:14px;background:var(--mh-fill);box-shadow:inset 0 0 0 1px var(--mh-line)}
+.mogg-studio-pv{border-radius:10px;overflow:hidden;box-shadow:0 18px 44px -20px rgba(0,0,0,.8)}
+.mogg-studio-facts{display:flex;gap:6px 12px;flex-wrap:wrap;font-size:12px;color:var(--mh-sub)}
+.mogg-studio-facts b{color:var(--mh-text);font-weight:700}
+.mogg-studio-row{display:flex;gap:8px;align-items:center}
+.mogg-field{margin-bottom:22px}
+.mogg-field>.lbl{display:block;margin-bottom:10px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--mh-sub)}
+.mogg-input.mogg-hex{width:92px;height:30px;margin-top:0;padding:0 10px;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12.5px}
+.mogg-input.mogg-code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12px}
+.mogg-studio .mogg-sw{box-shadow:inset 0 0 0 1.5px rgba(var(--mh-rgb),.26)}
+.mogg-studio .mogg-sw[aria-pressed="true"]{box-shadow:inset 0 0 0 1.5px rgba(var(--mh-rgb),.26),0 0 0 2px var(--mh-base),0 0 0 4px var(--mh-text)}
+.mogg-hue{-webkit-appearance:none;appearance:none;display:block;width:100%;height:12px;margin:14px 0 0;border-radius:99px;background:linear-gradient(90deg,#ff4d4d,#ffd84d,#5dff4d,#4dffe1,#4d7dff,#d44dff,#ff4d4d);cursor:pointer}
+.mogg-hue::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.5);cursor:grab}
+.mogg-hue:active::-webkit-slider-thumb{cursor:grabbing;transform:scale(1.1)}
+
 .mogg-sec{margin-top:30px}
 .mogg-sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
 .mogg-sec h3{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--mh-text)}
@@ -1470,6 +1941,8 @@ background:linear-gradient(115deg,rgba(var(--mh-accent-rgb),.2),rgba(var(--mh-ac
 .mogg-head{padding:22px 20px 14px 22px}
 .mogg-scroll{padding:4px 22px 22px}
 .mogg-facts{grid-template-columns:minmax(0,1fr)}
+.mogg-studio{grid-template-columns:minmax(0,1fr)}
+.mogg-studio-side{position:static;order:-1}
 }
 @media (prefers-reduced-motion:reduce){
 .mogg-hub,.mogg-hub-scrim,.mogg-design,.mogg-switch::after,.mogg-check,.mogg-sw,.mogg-btn{transition:none!important}

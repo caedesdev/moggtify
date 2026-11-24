@@ -16,7 +16,7 @@
       "0409": {
         "identity": {
           "name": "Moggtify",
-          "version": "1.0.0.0"
+          "version": "1.1.0.0"
         },
         "description": "Moggtify",
         "minimum-os": "win10",
@@ -40,18 +40,18 @@
     "#1": {
       "0000": {
         "fixed": {
-          "file_version": "1.0.0.0",
-          "product_version": "1.0.0.0"
+          "file_version": "1.1.0.0",
+          "product_version": "1.1.0.0"
         },
         "info": {
           "0409": {
             "CompanyName": "Moggtify",
             "FileDescription": "Moggtify",
-            "FileVersion": "1.0.0",
+            "FileVersion": "1.1.0",
             "InternalName": "Moggtify",
             "OriginalFilename": "Moggtify.exe",
             "ProductName": "Moggtify",
-            "ProductVersion": "1.0.0"
+            "ProductVersion": "1.1.0"
           }
         }
       }

@@ -50,7 +50,7 @@
 
   function makeState() {
     const s = {
-      version: "1.0.0",
+      version: "1.1.0",
       mode: q.get("mode") || "",
       spotify: { found: true, store: false, dir: "", exe: "", version: "1.3.10.2586", running: true, status: "clean" },
       installed: false,
