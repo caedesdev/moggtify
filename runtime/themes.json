@@ -1,0 +1,267 @@
+[
+  {
+    "id": "spotify",
+    "name": "Spotify",
+    "description": "Spotify's own look – also the right choice with Marketplace themes.",
+    "passthrough": true,
+    "colors": {
+      "frame": "#000000",
+      "base": "#121212",
+      "highlight": "#1f1f1f",
+      "elevated": "#1f1f1f",
+      "elevatedHighlight": "#2a2a2a",
+      "text": "#ffffff",
+      "subdued": "#b3b3b3",
+      "accent": "#1ed760",
+      "accentText": "#000000",
+      "border": "#292929"
+    }
+  },
+  {
+    "id": "mogg",
+    "name": "Mogg",
+    "description": "Moggtify's signature: deep green-black lit by a mint glow.",
+    "flavor": "glass",
+    "tags": ["cool", "signature", "glow"],
+    "colors": {
+      "frame": "#030605",
+      "base": "#0a1610",
+      "highlight": "#16241d",
+      "elevated": "#132019",
+      "elevatedHighlight": "#202f27",
+      "text": "#f1fbf4",
+      "subdued": "#a0baab",
+      "accent": "#6ff0a3",
+      "accentText": "#02130a",
+      "border": "#202e27"
+    }
+  },
+  {
+    "id": "void",
+    "name": "Void",
+    "description": "True black for OLED screens. Pure white, zero distraction.",
+    "flavor": "flat",
+    "tags": ["neutral", "oled", "minimal"],
+    "colors": {
+      "frame": "#000000",
+      "base": "#000000",
+      "highlight": "#1a1a1a",
+      "elevated": "#121212",
+      "elevatedHighlight": "#242424",
+      "text": "#ffffff",
+      "subdued": "#a8a8a8",
+      "accent": "#ffffff",
+      "accentText": "#000000",
+      "border": "#1f1f1f"
+    }
+  },
+  {
+    "id": "flint",
+    "name": "Flint",
+    "description": "Matte graphite with an electric-blue spark.",
+    "flavor": "flat",
+    "tags": ["neutral", "matte"],
+    "colors": {
+      "frame": "#0a0b0d",
+      "base": "#181a1c",
+      "highlight": "#25272b",
+      "elevated": "#222427",
+      "elevatedHighlight": "#303236",
+      "text": "#f2f3f6",
+      "subdued": "#aeb3ba",
+      "accent": "#5da3ff",
+      "accentText": "#051127",
+      "border": "#2e3034"
+    }
+  },
+  {
+    "id": "glacier",
+    "name": "Glacier",
+    "description": "Frosted night blue with an icy edge.",
+    "flavor": "glass",
+    "tags": ["cool", "crisp"],
+    "colors": {
+      "frame": "#02060c",
+      "base": "#09141d",
+      "highlight": "#14222e",
+      "elevated": "#111e29",
+      "elevatedHighlight": "#1e2d3a",
+      "text": "#eff9fd",
+      "subdued": "#a4b7c6",
+      "accent": "#7dd9fc",
+      "accentText": "#031826",
+      "border": "#1e2c38"
+    }
+  },
+  {
+    "id": "lagoon",
+    "name": "Lagoon",
+    "description": "Deep-sea teal with a bright aqua current.",
+    "flavor": "flat",
+    "tags": ["cool", "fresh"],
+    "colors": {
+      "frame": "#010708",
+      "base": "#041619",
+      "highlight": "#0d2428",
+      "elevated": "#0b2024",
+      "elevatedHighlight": "#173034",
+      "text": "#ecf8f7",
+      "subdued": "#9fbabd",
+      "accent": "#49dfc7",
+      "accentText": "#001b1b",
+      "border": "#182e32"
+    }
+  },
+  {
+    "id": "grove",
+    "name": "Grove",
+    "description": "Mossy forest greens with a fresh fern accent.",
+    "flavor": "flat",
+    "tags": ["warm", "earthy"],
+    "colors": {
+      "frame": "#040703",
+      "base": "#0f150c",
+      "highlight": "#1b2318",
+      "elevated": "#181f15",
+      "elevatedHighlight": "#262e22",
+      "text": "#f3f7ee",
+      "subdued": "#aeb8a5",
+      "accent": "#b6da70",
+      "accentText": "#101a05",
+      "border": "#252d21"
+    }
+  },
+  {
+    "id": "gilded",
+    "name": "Gilded",
+    "description": "Black lacquer trimmed in soft gold.",
+    "flavor": "flat",
+    "tags": ["warm", "luxe"],
+    "colors": {
+      "frame": "#040403",
+      "base": "#11100e",
+      "highlight": "#22201d",
+      "elevated": "#1e1c19",
+      "elevatedHighlight": "#2d2b27",
+      "text": "#f6f3eb",
+      "subdued": "#b7b2a5",
+      "accent": "#e7be62",
+      "accentText": "#1d1503",
+      "border": "#2b2a26"
+    }
+  },
+  {
+    "id": "lantern",
+    "name": "Lantern",
+    "description": "Warm espresso shadows lit by amber lamplight.",
+    "flavor": "flat",
+    "tags": ["warm", "cozy"],
+    "colors": {
+      "frame": "#090402",
+      "base": "#1a100a",
+      "highlight": "#291e15",
+      "elevated": "#241a12",
+      "elevatedHighlight": "#35281f",
+      "text": "#f9f2e9",
+      "subdued": "#c5b09e",
+      "accent": "#ffa14c",
+      "accentText": "#251002",
+      "border": "#33271f"
+    }
+  },
+  {
+    "id": "sundown",
+    "name": "Sundown",
+    "description": "Twilight indigo warmed by a coral sun.",
+    "flavor": "soft",
+    "tags": ["warm", "dreamy"],
+    "colors": {
+      "frame": "#04050e",
+      "base": "#101120",
+      "highlight": "#1d1e31",
+      "elevated": "#191b2c",
+      "elevatedHighlight": "#28293e",
+      "text": "#faf4ef",
+      "subdued": "#b3b1c7",
+      "accent": "#fd9976",
+      "accentText": "#2e110a",
+      "border": "#27283b"
+    }
+  },
+  {
+    "id": "cardinal",
+    "name": "Cardinal",
+    "description": "Wine-dark depths with a bold crimson pulse.",
+    "flavor": "flat",
+    "tags": ["warm", "bold"],
+    "colors": {
+      "frame": "#0d0304",
+      "base": "#1f0c0f",
+      "highlight": "#30181b",
+      "elevated": "#2b1518",
+      "elevatedHighlight": "#3d2326",
+      "text": "#fbf0f1",
+      "subdued": "#c9acae",
+      "accent": "#f53451",
+      "accentText": "#23060a",
+      "border": "#3a2225"
+    }
+  },
+  {
+    "id": "petal",
+    "name": "Petal",
+    "description": "Dusky rose with a soft blush of pink.",
+    "flavor": "soft",
+    "tags": ["warm", "pastel"],
+    "colors": {
+      "frame": "#0a0407",
+      "base": "#1a0f15",
+      "highlight": "#2a1b23",
+      "elevated": "#25181f",
+      "elevatedHighlight": "#36262e",
+      "text": "#fcf2f6",
+      "subdued": "#caafba",
+      "accent": "#f8a9c7",
+      "accentText": "#2c101c",
+      "border": "#33252d"
+    }
+  },
+  {
+    "id": "velvet",
+    "name": "Velvet",
+    "description": "Royal violet with lavender highlights.",
+    "flavor": "soft",
+    "tags": ["cool", "regal"],
+    "colors": {
+      "frame": "#07040e",
+      "base": "#150f20",
+      "highlight": "#241c31",
+      "elevated": "#1f182c",
+      "elevatedHighlight": "#2f263e",
+      "text": "#f6f3fe",
+      "subdued": "#b8aecd",
+      "accent": "#bf9bfc",
+      "accentText": "#190d32",
+      "border": "#2d253b"
+    }
+  },
+  {
+    "id": "neon",
+    "name": "Neon",
+    "description": "Midnight black wired with electric magenta.",
+    "flavor": "flat",
+    "tags": ["cool", "vivid", "night"],
+    "colors": {
+      "frame": "#040408",
+      "base": "#100f18",
+      "highlight": "#201f2a",
+      "elevated": "#1c1b25",
+      "elevatedHighlight": "#2b2a36",
+      "text": "#f9f3fa",
+      "subdued": "#b8afcb",
+      "accent": "#fb48ce",
+      "accentText": "#22051a",
+      "border": "#2a2834"
+    }
+  }
+]

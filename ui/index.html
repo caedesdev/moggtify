@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moggtify</title>
+<style>
+/* =====================================================================
+   Moggtify loader – variant A "Split stage"
+   Left: brand, headline, status, three actions. Right: cinematic stage.
+   All sizes are rem; the root font-size scales with the window so the
+   composition holds from 900x600 up to 1400x900.
+   ===================================================================== */
+@property --sp-frame{syntax:"<color>";inherits:true;initial-value:#070a07}
+@property --sp-base{syntax:"<color>";inherits:true;initial-value:#0e130e}
+@property --sp-hl{syntax:"<color>";inherits:true;initial-value:#192219}
+@property --sp-el{syntax:"<color>";inherits:true;initial-value:#141b14}
+@property --sp-text{syntax:"<color>";inherits:true;initial-value:#eef6ea}
+@property --sp-sub{syntax:"<color>";inherits:true;initial-value:#98ab92}
+@property --sp-acc{syntax:"<color>";inherits:true;initial-value:#a3e635}
+
+:root{
+  --bg:#030605;
+  --text:#effaf3;--text2:#b9ccc0;--muted:#86a091;--faint:#55695d;
+  --line:rgba(190,255,215,.085);--line2:rgba(190,255,215,.16);
+  --g:#1ed760;--g2:#6ff0a3;--g3:#d6ffe5;--gd:#0f8f3f;--ink:#02130a;
+  --amber:#f5c451;--rose:#fb7185;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --ease-in:cubic-bezier(.4,0,1,1);
+  --ease-io:cubic-bezier(.65,0,.35,1);
+  --spring:cubic-bezier(.34,1.5,.64,1);
+  --display:"Segoe UI Variable Display","Segoe UI Variable","Segoe UI",system-ui,sans-serif;
+  --heavy:"Segoe UI Black","Segoe UI",system-ui,sans-serif;
+  --body:"Segoe UI Variable Text","Segoe UI Variable","Segoe UI",system-ui,sans-serif;
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,monospace;
+  color-scheme:dark;
+}
+html{font-size:clamp(13.5px,min(1.5385vw,2.3529vh),20px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit}
+svg{display:block}
+::selection{background:rgba(30,215,96,.35)}
+
+/* ---------------------------------------------------------------- layout */
+.app{position:relative;height:100vh;display:grid;grid-template-columns:28rem minmax(0,1fr);overflow:hidden;isolation:isolate}
+.col{grid-column:1;grid-row:1;position:relative;z-index:3;display:flex;flex-direction:column;min-height:0;padding:2.25rem 1.25rem 1.75rem 3rem}
+.stage{grid-column:2;grid-row:1;position:relative;z-index:1;min-width:0}
+.scene{position:absolute;left:50%;top:50%;width:37rem;height:42.5rem;margin:-21.25rem 0 0 -18.5rem}
+
+
+/* ---------------------------------------------------------------- brand */
+.brand{display:flex;align-items:center;gap:.625rem;height:2rem;flex:none}
+.mark{width:2rem;height:2rem;border-radius:.625rem;display:grid;place-items:center;background:linear-gradient(145deg,#8ff5bb,#1ed760 52%,#0c8a3a);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 .375rem 1.25rem -.375rem rgba(30,215,96,.85)}
+.mark svg{width:1.125rem;height:1.125rem;color:#02210d}
+.wm{font-family:var(--heavy);font-weight:900;font-size:1.125rem;letter-spacing:-.045em}
+.wm i{font-style:normal;color:var(--g)}
+
+/* ---------------------------------------------------------------- views */
+.views{position:relative;flex:1;min-height:0}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center}
+.view.out{animation:vOut .26s var(--ease-in) both;pointer-events:none}
+@keyframes vOut{to{opacity:0;transform:translateY(-.5rem)}}
+.ent{animation:ent .62s var(--ease) both;animation-delay:calc(var(--i,0) * 45ms + 90ms)}
+.boot .ent{animation-duration:1s;animation-delay:calc(var(--i,0) * 70ms + 160ms)}
+@keyframes ent{from{opacity:0;transform:translateY(.875rem)}}
+
+/* status chip – moggcord's "New" pill */
+.chip{align-self:flex-start;display:inline-flex;align-items:center;gap:.5rem;height:1.875rem;padding:0 .875rem 0 .25rem;border-radius:99px;background:rgba(9,17,12,.78);border:1px solid var(--line);font-size:.75rem;font-weight:600;color:var(--text2);white-space:nowrap;max-width:100%}
+.chip b{height:1.375rem;padding:0 .5625rem;border-radius:99px;display:inline-flex;align-items:center;font-size:.6875rem;font-weight:750;letter-spacing:.01em;background:linear-gradient(180deg,#effff5,#b9f5cf);color:#04200f}
+.chip span{overflow:hidden;text-overflow:ellipsis}
+.chip.warn b{background:linear-gradient(180deg,#fff0c4,#f5c451);color:#2b1d00}
+.chip.bad b{background:linear-gradient(180deg,#ffdbe1,#fb8597);color:#2d0712}
+.chip.dim b{background:rgba(255,255,255,.13);color:var(--text)}
+
+/* headline: italic light / heavy / shimmer */
+.hl{margin:1.25rem 0 0;font-weight:400;line-height:1}
+.hl .l1{display:block;font-family:var(--display);font-size:1.75rem;font-weight:300;font-style:italic;letter-spacing:-.035em;color:#cfe8d9;margin:0 0 .5rem .0625rem}
+.hl .l2,.hl .l3{display:block;font-family:var(--heavy);font-weight:900;font-size:3.875rem;letter-spacing:-.06em;line-height:.98;white-space:nowrap}
+.hl .l2{color:#f4fff8}
+.hl .l3{padding-bottom:.06em;color:var(--g)}
+.shimmer{background:repeating-linear-gradient(100deg,#1ed760 0%,#2fdc74 16%,#bff9d8 25%,#3fe282 34%,#1ed760 50%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:shim 9s linear infinite}
+@keyframes shim{to{background-position:-200% 0}}
+.still{background:linear-gradient(100deg,#1ed760,#9ff5c7 55%,#1ed760);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.rose{background:linear-gradient(100deg,#fb7185,#ffc2cc 60%,#fb8597);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+
+.lead{margin:1rem 0 0;max-width:23.5rem;font-size:.9375rem;line-height:1.55;color:var(--text2);text-wrap:pretty}
+.lead b{color:var(--text);font-weight:650}
+.mchip{display:inline-grid;place-items:center;width:1.375rem;height:1.375rem;margin:0 .125rem;border-radius:50%;vertical-align:-.3rem;background:linear-gradient(150deg,#8ff5bb,#1ed760 55%,#0f8f3f);color:#02210d;box-shadow:0 0 .75rem rgba(30,215,96,.6)}
+.mchip svg{width:.8125rem;height:.8125rem}
+
+/* ---------------------------------------------------------------- actions */
+.acts{display:flex;flex-direction:column;gap:.5rem;margin-top:1.75rem;max-width:23.5rem}
+.act{all:unset;box-sizing:border-box;position:relative;display:grid;grid-template-columns:2.5rem minmax(0,1fr) 1.75rem;align-items:center;gap:.875rem;width:100%;height:3.75rem;padding:0 .875rem 0 .625rem;border-radius:1rem;background:rgba(255,255,255,.026);border:1px solid var(--line);cursor:pointer;transition:background .25s,border-color .25s,box-shadow .35s var(--ease),transform .35s var(--ease),opacity .3s}
+.act .ic{width:2.5rem;height:2.5rem;border-radius:.75rem;display:grid;place-items:center;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--g2);transition:color .25s,background .25s,border-color .25s}
+.act .ic svg{width:1.125rem;height:1.125rem}
+.act .tx{min-width:0}
+.act b{display:flex;align-items:center;gap:.5rem;font-size:.9375rem;font-weight:650;letter-spacing:-.01em;color:var(--text)}
+.act small{display:block;margin-top:.1875rem;font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act .go{width:1.75rem;height:1.75rem;border-radius:50%;display:grid;place-items:center;color:var(--faint);transition:transform .35s var(--ease),color .25s,background .25s}
+.act .go svg{width:.875rem;height:.875rem}
+.act .tag{font-size:.625rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.1875rem .4375rem;border-radius:99px;background:#04200f;color:var(--g2)}
+.act:hover{background:rgba(255,255,255,.05);border-color:var(--line2)}
+.act:hover .go{transform:translateX(.1875rem);color:var(--text)}
+.act:active{transform:scale(.985)}
+.act:focus-visible{outline:2px solid var(--g);outline-offset:3px}
+.act.danger .ic{color:#fda4af}
+.act.danger:hover{background:rgba(251,113,133,.06);border-color:rgba(251,113,133,.28)}
+.act.danger:hover .ic{background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.3)}
+.act.primary{height:4.25rem;background:linear-gradient(180deg,#f3fff8,#c3f5d6);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 .875rem 2.5rem -1rem rgba(30,215,96,.75),0 0 4.5rem -1.75rem rgba(30,215,96,.8)}
+.act.primary .ic{background:#05210f;border-color:transparent;color:#7cf3b0}
+.act.primary b{color:#03200f;font-size:1rem;font-weight:750}
+.act.primary small{color:#2c6a46}
+.act.primary .go{background:#05210f;color:#d6ffe5}
+.act.primary:hover{background:linear-gradient(180deg,#f7fffa,#cdf8de);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1.125rem 3rem -1rem rgba(30,215,96,.9),0 0 5.5rem -1.5rem rgba(30,215,96,.95);transform:translateY(-1px)}
+.act.primary:active{transform:translateY(0) scale(.985)}
+.act[disabled]{cursor:default;opacity:.4;box-shadow:none}
+.acts.quiet{margin-top:1.25rem;gap:.375rem}
+.acts.quiet .act{height:3.25rem}
+.acts.quiet .act .ic{width:2.125rem;height:2.125rem;border-radius:.625rem}
+.act[disabled]:hover{background:rgba(255,255,255,.026);border-color:var(--line)}
+.act[disabled] .go{opacity:0}
+.act[disabled]:active{transform:none}
+
+/* get-spotify + generic buttons */
+.btns{display:flex;flex-wrap:wrap;gap:.625rem;margin-top:1.75rem}
+.btn{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:2.75rem;padding:0 1.25rem;border-radius:99px;font-size:.875rem;font-weight:650;white-space:nowrap;cursor:pointer;background:rgba(255,255,255,.035);border:1px solid var(--line);color:var(--text);transition:background .25s,border-color .25s,box-shadow .35s var(--ease),transform .35s var(--ease)}
+.btn svg{width:1rem;height:1rem;flex:none}
+.btn:hover{background:rgba(255,255,255,.065);border-color:var(--line2)}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--g);outline-offset:3px}
+.btn.light{background:linear-gradient(180deg,#f3fff8,#c3f5d6);color:#03200f;border-color:transparent;font-weight:750;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 .75rem 2.25rem -.875rem rgba(30,215,96,.8)}
+.btn.light:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1rem 2.75rem -.875rem rgba(30,215,96,.95);transform:translateY(-1px)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.btn.danger{background:linear-gradient(180deg,#ff9aa9,#f4566f);color:#2a0610;border-color:transparent;font-weight:750;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 .75rem 2.25rem -.875rem rgba(244,63,94,.75)}
+.btn.danger:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1rem 2.75rem -.875rem rgba(244,63,94,.9);transform:translateY(-1px)}
+
+/* ---------------------------------------------------------------- confirm */
+.facts{margin:1.25rem 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.375rem;max-width:23.5rem}
+.facts li{display:flex;align-items:center;gap:.75rem;font-size:.875rem;color:var(--text2);height:2.25rem}
+.facts i{width:1.875rem;height:1.875rem;border-radius:.625rem;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted)}
+.facts i svg{width:.9375rem;height:.9375rem}
+.facts li.keep i{color:var(--g2)}
+
+/* ---------------------------------------------------------------- progress */
+.eyebrow{display:flex;align-items:center;gap:.625rem;font-size:.6875rem;font-weight:750;letter-spacing:.16em;text-transform:uppercase;color:var(--g2)}
+.eyebrow em{font-style:normal;color:var(--faint);letter-spacing:.08em}
+.pnum{display:flex;align-items:baseline;gap:.75rem;margin-top:.5rem}
+.pnum .n{font-family:var(--heavy);font-weight:900;font-size:4.5rem;letter-spacing:-.06em;line-height:1;font-variant-numeric:tabular-nums;padding-right:.06em}
+.pnum .n small{font-size:.5em;letter-spacing:-.04em;margin-left:.04em}
+.now{margin-top:.25rem;font-size:.875rem;color:var(--text2);height:1.375rem;display:flex;align-items:center;gap:.5rem;white-space:nowrap;overflow:hidden}
+.now span{overflow:hidden;text-overflow:ellipsis}
+.bar{position:relative;margin-top:1rem;height:.375rem;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;max-width:23.5rem}
+.bar i{position:absolute;inset:0 auto 0 0;width:0;border-radius:inherit;background:linear-gradient(90deg,#0f8f3f,#1ed760 70%,#c6ffd9);box-shadow:0 0 .75rem rgba(30,215,96,.8);transition:width .7s var(--ease)}
+.bar.err i{background:linear-gradient(90deg,#9f1239,#fb7185);box-shadow:0 0 .75rem rgba(251,113,133,.6)}
+.steps{margin:1.25rem 0 0;padding:0;list-style:none;max-width:23.5rem;display:flex;flex-direction:column;gap:.125rem}
+.st{display:grid;grid-template-columns:1.125rem minmax(0,1fr) auto;align-items:center;gap:.75rem;height:1.875rem;padding:0 .625rem;margin:0 -.625rem;border-radius:.625rem;font-size:.8125rem;color:var(--faint);transition:color .35s,background .35s}
+.st .ind{position:relative;width:1.125rem;height:1.125rem;border-radius:50%;border:1.5px solid rgba(255,255,255,.13);display:grid;place-items:center;transition:border-color .3s,background .3s,box-shadow .3s}
+.st .ind svg{width:.6875rem;height:.6875rem;opacity:0;color:var(--ink)}
+.st .lb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .dt{font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.st.run{color:var(--text);background:rgba(30,215,96,.065)}
+.st.run .ind{border-color:rgba(30,215,96,.22);border-top-color:var(--g);animation:spin .8s linear infinite}
+.st.done{color:var(--text2)}
+.st.done .ind{background:var(--g);border-color:var(--g);box-shadow:0 0 .625rem rgba(30,215,96,.55);animation:pop .45s var(--spring) both}
+.st.done .ind svg{opacity:1}
+.st.done .ind svg path{stroke-dasharray:24;animation:draw .4s .08s var(--ease) both}
+.st.fail{color:#fecdd3;background:rgba(251,113,133,.07)}
+.st.fail .ind{border-color:var(--rose);background:rgba(251,113,133,.16)}
+.st.fail .ind svg{opacity:1;color:var(--rose)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{transform:scale(.55)}}
+@keyframes draw{from{stroke-dashoffset:24}}
+.hint{margin-top:1.25rem;font-size:.75rem;color:var(--faint);display:flex;align-items:center;gap:.5rem}
+.hint svg{width:.875rem;height:.875rem;flex:none}
+
+/* segmented progress (error view) */
+.segs{display:flex;gap:.25rem;margin-top:1rem;max-width:23.5rem}
+.segs i{flex:1;height:.3125rem;border-radius:99px;background:rgba(255,255,255,.08)}
+.segs i.d{background:var(--g);box-shadow:0 0 .5rem rgba(30,215,96,.45)}
+.segs i.f{background:var(--rose);box-shadow:0 0 .5rem rgba(251,113,133,.55)}
+
+/* ---------------------------------------------------------------- error */
+.errbox{margin-top:1rem;max-width:23.5rem;max-height:7.5rem;overflow:auto;padding:.875rem 1rem;border-radius:.875rem;background:rgba(251,113,133,.06);border:1px solid rgba(251,113,133,.22);color:#fecdd3;font-family:var(--mono);font-size:.75rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text;cursor:text}
+.errbox::-webkit-scrollbar{width:6px}
+.errbox::-webkit-scrollbar-thumb{background:rgba(251,113,133,.25);border-radius:6px}
+
+/* ---------------------------------------------------------------- footer */
+.foot{flex:none;display:flex;align-items:center;gap:.5rem;margin-top:1rem;font-size:.6875rem;color:var(--faint);white-space:nowrap}
+.foot .sep{opacity:.5}
+.lnk{all:unset;cursor:pointer;color:var(--muted);border-radius:4px;transition:color .2s}
+.lnk:hover{color:var(--text)}
+.lnk:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+
+/* =================================================================== stage */
+.sky{position:absolute;inset:0;pointer-events:none}
+.halo{position:absolute;left:8.5rem;top:-6rem;width:32rem;height:30rem;border-radius:50%;background:radial-gradient(closest-side,rgba(30,215,96,.17),rgba(30,215,96,.06) 55%,transparent);transition:opacity 1.2s var(--ease)}
+.arc{position:absolute;left:calc(24.75rem - 40rem);top:9.5rem;width:80rem;height:80rem;border-radius:50%;
+  background:radial-gradient(circle at 50% 0%,#0c1c12 0%,#050a07 16%,var(--bg) 36%);
+  box-shadow:0 -1px 0 rgba(170,255,205,.6),0 -.375rem 2.5rem rgba(30,215,96,.38),0 -2rem 9rem rgba(30,215,96,.2);
+  -webkit-mask-image:linear-gradient(90deg,transparent 11rem,#000 26rem);mask-image:linear-gradient(90deg,transparent 11rem,#000 26rem);transition:opacity 1.2s var(--ease)}
+.arc::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(40% 5% at 50% 0%,rgba(160,255,200,.22),transparent 70%)}
+
+/* figure */
+.fig-wrap{position:absolute;right:-3.25rem;top:1.25rem;width:30rem;height:32.3rem}
+.fig{width:100%;height:100%;transform:translate(calc(var(--mx,0) * -.35rem),calc(var(--my,0) * -.2rem));transition:transform 1.6s var(--ease),filter 1s var(--ease),opacity 1s var(--ease);-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 97%);mask-image:linear-gradient(180deg,#000 62%,transparent 97%)}
+.fig svg{width:100%;height:100%;overflow:visible}
+
+/* spotify window */
+.win-wrap{position:absolute;left:.5rem;top:17.75rem;width:31rem;height:21rem;perspective:72rem}
+.win-wrap::after{content:"";position:absolute;left:8%;right:4%;bottom:-3.25rem;height:4.5rem;border-radius:50%;background:radial-gradient(closest-side,rgba(30,215,96,.2),transparent);filter:blur(6px);pointer-events:none;transition:opacity .8s}
+.win{position:absolute;inset:0;font-size:.625rem;border-radius:1.6em;transform-origin:62% 50%;
+  transform:rotateY(calc(-13deg + var(--mx,0) * 1.6deg)) rotateX(calc(4deg - var(--my,0) * 1.2deg)) rotateZ(-.6deg);
+  transition:transform 1.4s var(--ease),opacity .8s var(--ease),filter .8s var(--ease);
+  box-shadow:0 3rem 5rem -1.5rem rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.075),0 -1rem 4rem -1.25rem rgba(30,215,96,.22)}
+.win[data-theme="stock"]{--sp-frame:#000;--sp-base:#121212;--sp-hl:#1f1f1f;--sp-el:#242424;--sp-text:#fff;--sp-sub:#b3b3b3;--sp-acc:#1ed760}
+.sp{position:absolute;inset:0;display:grid;grid-template-rows:4.4em minmax(0,1fr) 5.4em;gap:.5em;padding:.6em;border-radius:inherit;overflow:hidden;background:var(--sp-frame);color:var(--sp-text);font-family:var(--body);transition:--sp-frame .9s,--sp-base .9s,--sp-hl .9s,--sp-el .9s,--sp-text .9s,--sp-sub .9s,--sp-acc .9s}
+.sp::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.07),rgba(255,255,255,0) 34%)}
+.sp svg{width:1.5em;height:1.5em}
+.sp-top{display:flex;align-items:center;gap:.8em;padding:0 .7em 0 1em;min-width:0}
+.sp-dots{display:flex;gap:.35em;margin-right:.4em}
+.sp-dots b{width:.45em;height:.45em;border-radius:50%;background:var(--sp-sub);opacity:.55}
+.sp-nav{width:2.4em;height:2.4em;border-radius:50%;display:grid;place-items:center;color:var(--sp-sub)}
+.sp-nav svg{width:1.3em;height:1.3em}
+.sp-c{flex:1;display:flex;justify-content:center;align-items:center;gap:.6em;min-width:0}
+.sp-home{width:3.4em;height:3.4em;flex:none;border-radius:50%;background:var(--sp-hl);display:grid;place-items:center;color:var(--sp-text)}
+.sp-search{width:21em;min-width:0;height:3.4em;border-radius:99px;background:var(--sp-hl);display:flex;align-items:center;gap:.7em;padding:0 1.2em;color:var(--sp-sub);font-size:1.1em;white-space:nowrap;overflow:hidden}
+.sp-search svg{width:1.35em;height:1.35em;flex:none}
+.sp-r{display:flex;align-items:center;gap:.8em;flex:none}
+.sp-ic{width:2.4em;height:2.4em;display:grid;place-items:center;color:var(--sp-sub)}
+.slot{position:relative;width:3.4em;height:3.4em;flex:none}
+.sp-m{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;background:linear-gradient(150deg,#8ff5bb,#1ed760 55%,#0f8f3f);color:#02210d;
+  box-shadow:0 0 0 .3em rgba(30,215,96,.16),0 0 2em rgba(30,215,96,.8),inset 0 1px 0 rgba(255,255,255,.55);
+  transition:opacity .7s var(--ease),transform .7s var(--spring),box-shadow .7s,background .7s,color .7s}
+.sp-m svg{width:1.75em;height:1.75em}
+.ghost-m{position:absolute;inset:0;border-radius:50%;border:1.5px dashed rgba(255,255,255,.28);opacity:0;transition:opacity .6s}
+.sp .ring{position:absolute;left:-.75em;top:-.75em;width:calc(100% + 1.5em);height:calc(100% + 1.5em);transform:rotate(-90deg);opacity:0;transition:opacity .5s}
+.ring circle{fill:none;stroke-width:2.4}
+.ring .trk{stroke:rgba(255,255,255,.1)}
+.ring .val{stroke:var(--g);stroke-linecap:round;filter:drop-shadow(0 0 .35em rgba(30,215,96,.9));transition:stroke-dashoffset .7s var(--ease),stroke .4s}
+.ping{position:absolute;inset:0;border-radius:50%;border:2px solid var(--g2);opacity:0}
+.badge{position:absolute;right:-.15em;top:-.15em;width:1.1em;height:1.1em;border-radius:50%;background:var(--amber);border:.22em solid var(--sp-frame);opacity:0;transform:scale(.4);transition:opacity .4s,transform .5s var(--spring)}
+.sp-av{width:3.4em;height:3.4em;flex:none;border-radius:50%;background:var(--sp-hl);display:grid;place-items:center}
+.sp-av i{width:2.6em;height:2.6em;border-radius:50%;background:radial-gradient(circle at 50% 38%,#f2c9a8 0 22%,transparent 23%),radial-gradient(ellipse 60% 42% at 50% 100%,#f2c9a8 0 98%,transparent 100%),linear-gradient(160deg,#5b8def,#3a4fb8);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+
+.sp-body{display:grid;grid-template-columns:12.5em minmax(0,1fr);gap:.5em;min-height:0}
+.sp-lib{background:var(--sp-base);border-radius:.9em;padding:1.3em 1.1em;display:flex;flex-direction:column;gap:.95em;overflow:hidden;transition:opacity .8s,filter .8s}
+.sp-lib-h{display:flex;align-items:center;gap:.6em;font-weight:700;font-size:1.15em}
+.sp-lib-h svg{width:1.3em;height:1.3em;color:var(--sp-sub)}
+.sp-chips{display:flex;gap:.45em}
+.sp-chips i{font-style:normal;font-size:.95em;padding:.35em .8em;border-radius:99px;background:var(--sp-hl);color:var(--sp-text)}
+.sp-li{display:flex;gap:.8em;align-items:center}
+.sp-li u{width:3.6em;height:3.6em;border-radius:.45em;flex:none}
+.sp-li span{flex:1;display:flex;flex-direction:column;gap:.5em;min-width:0}
+.sp-li span i{display:block;height:.55em;border-radius:.3em;background:var(--sp-text);opacity:.82;width:82%}
+.sp-li span i+i{opacity:.3;width:54%}
+.sp-main{position:relative;border-radius:.9em;overflow:hidden;padding:1.7em 1.9em;background:linear-gradient(180deg,color-mix(in srgb,var(--sp-acc) 30%,var(--sp-base)) 0%,var(--sp-base) 58%);transition:opacity .8s,filter .8s}
+.sp-hero{display:flex;align-items:flex-end;gap:1.5em}
+.sp-cover{width:9.5em;height:9.5em;flex:none;border-radius:.6em;background:radial-gradient(circle at 30% 25%,color-mix(in srgb,var(--sp-acc) 70%,#fff),transparent 55%),linear-gradient(140deg,var(--sp-acc),color-mix(in srgb,var(--sp-acc) 25%,#000));box-shadow:0 1.2em 2.4em -.6em rgba(0,0,0,.6);display:grid;place-items:center}
+.sp-cover svg{width:3.6em;height:3.6em;color:rgba(0,0,0,.45)}
+.sp-meta small{display:block;font-size:.95em;font-weight:600;opacity:.85}
+.sp-meta b{display:block;font-size:3em;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:.12em 0 .3em;white-space:nowrap}
+.sp-meta span{display:block;font-size:.95em;color:var(--sp-sub)}
+.sp-actions{display:flex;align-items:center;gap:1.3em;margin:1.4em 0 .9em}
+.sp-play{width:4.2em;height:4.2em;border-radius:50%;background:var(--sp-acc);color:var(--sp-frame);display:grid;place-items:center;box-shadow:0 .6em 1.6em -.4em color-mix(in srgb,var(--sp-acc) 70%,transparent)}
+.sp-play svg{width:1.6em;height:1.6em}
+.sp-actions i{width:2.2em;height:2.2em;border-radius:50%;border:2px solid var(--sp-sub);opacity:.6}
+.sp-tr{display:grid;grid-template-columns:1.6em 3.2em minmax(0,1fr) 3em;align-items:center;gap:.9em;height:4em;font-size:1em;color:var(--sp-sub)}
+.sp-tr em{font-style:normal;text-align:right}
+.sp-tr u{width:3.2em;height:3.2em;border-radius:.35em}
+.sp-tr span{display:flex;flex-direction:column;gap:.5em}
+.sp-tr span i{display:block;height:.55em;border-radius:.3em;background:var(--sp-text);opacity:.8;width:62%}
+.sp-tr span i+i{opacity:.3;width:38%}
+.sp-tr.on em,.sp-tr.on span i:first-child{color:var(--sp-acc);background:var(--sp-acc);opacity:1}
+.sp-tr.on em{background:none}
+.sp-bar{display:grid;grid-template-columns:1fr 1.25fr 1fr;align-items:center;gap:1.2em;padding:0 1em;transition:opacity .8s,filter .8s}
+.sp-now{display:flex;align-items:center;gap:.9em;min-width:0}
+.sp-now u{width:4em;height:4em;flex:none;border-radius:.45em;background:linear-gradient(140deg,var(--sp-acc),color-mix(in srgb,var(--sp-acc) 20%,#000))}
+.sp-now span{min-width:0}
+.sp-now b{display:block;font-size:1.1em;white-space:nowrap}
+.sp-now small{display:block;font-size:.95em;color:var(--sp-sub);margin-top:.2em}
+.sp-ctl{display:flex;flex-direction:column;align-items:center;gap:.7em}
+.sp-btns{display:flex;align-items:center;gap:1.8em;color:var(--sp-sub)}
+.sp-btns svg{width:1.3em;height:1.3em}
+.sp-pp{width:3.2em;height:3.2em;border-radius:50%;background:var(--sp-text);color:var(--sp-frame);display:grid;place-items:center}
+.sp-prog{width:100%;height:.4em;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+.sp-prog i{display:block;width:38%;height:100%;border-radius:inherit;background:var(--sp-acc)}
+.sp-vol{justify-self:end;width:9em;height:.4em;border-radius:99px;background:rgba(255,255,255,.14)}
+.sp-vol i{display:block;width:64%;height:100%;border-radius:inherit;background:var(--sp-text)}
+
+/* the Moggtify Hub popover */
+.hub{position:absolute;top:5.5em;right:1.75em;width:19.5em;padding:1.2em 1.25em 1em;border-radius:1.2em;background:color-mix(in srgb,var(--sp-el) 94%,transparent);border:1px solid rgba(255,255,255,.085);
+  box-shadow:0 2.2em 4.4em -1em rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.45),0 0 3em -1em color-mix(in srgb,var(--sp-acc) 30%,transparent);
+  transform-origin:calc(100% - 5.25em) -.5em;transition:opacity .45s var(--ease),transform .55s var(--ease)}
+.hub::before{content:"";position:absolute;top:-.55em;right:4.7em;width:1.1em;height:1.1em;background:inherit;border-left:1px solid rgba(255,255,255,.085);border-top:1px solid rgba(255,255,255,.085);transform:rotate(45deg);border-radius:.2em 0 0 0}
+.hub-h{display:flex;align-items:center;gap:.8em}
+.hub-logo{width:2.6em;height:2.6em;flex:none;border-radius:.75em;display:grid;place-items:center;background:linear-gradient(145deg,#8ff5bb,#1ed760 55%,#0f8f3f);color:#02210d}
+.hub-logo svg{width:1.4em;height:1.4em}
+.hub-h b{display:block;font-size:1.3em;font-weight:750;letter-spacing:-.01em}
+.hub-h small{display:block;font-size:.95em;color:var(--sp-sub);margin-top:.1em}
+.hub-x{margin-left:auto;color:var(--sp-sub);opacity:.7}
+.hub-x svg{width:1.3em;height:1.3em}
+.hub-lab{display:flex;justify-content:space-between;margin:1.25em 0 .7em;font-size:.85em;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--sp-sub)}
+.hub-lab em{font-style:normal;letter-spacing:.02em;text-transform:none;color:var(--sp-acc);font-weight:700}
+.hub-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.65em}
+.sw{position:relative;aspect-ratio:1/.86;border-radius:.75em;background:linear-gradient(150deg,var(--h) 0%,var(--b) 58%,var(--f) 100%);border:1px solid rgba(255,255,255,.07)}
+.sw::after{content:"";position:absolute;left:.5em;bottom:.5em;width:1.05em;height:1.05em;border-radius:50%;background:var(--a);box-shadow:0 0 .8em var(--a)}
+.sw::before{content:"";position:absolute;left:1.85em;bottom:.72em;width:1.8em;height:.6em;border-radius:99px;background:var(--t);opacity:.5}
+.sw.on{outline:.16em solid var(--a);outline-offset:.16em}
+.hub-row{display:flex;align-items:center;justify-content:space-between;height:2.6em;font-size:1.05em;font-weight:600;border-top:1px solid rgba(255,255,255,.06)}
+.hub-row:first-of-type{margin-top:.9em}
+.hub-row span{display:flex;align-items:center;gap:.6em}
+.hub-row span svg{width:1.25em;height:1.25em;color:var(--sp-sub)}
+.tg{position:relative;width:2.7em;height:1.55em;border-radius:99px;background:rgba(255,255,255,.16)}
+.tg::after{content:"";position:absolute;top:.2em;left:.2em;width:1.15em;height:1.15em;border-radius:50%;background:#fff}
+.tg.on{background:var(--sp-acc)}
+.tg.on::after{left:1.35em;background:var(--sp-frame)}
+.sweep{position:absolute;inset:0;border-radius:inherit;pointer-events:none;overflow:hidden}
+.sweep::before{content:"";position:absolute;top:0;bottom:0;left:0;width:45%;background:linear-gradient(90deg,transparent,rgba(111,240,163,.16),transparent);transform:translateX(-120%)}
+.sweep.go::before{animation:sweep 1.5s var(--ease-io) both}
+@keyframes sweep{to{transform:translateX(260%)}}
+
+/* ------------------------------------------------ stage states (data-vis) */
+.stage[data-vis="off"] .hub,.stage[data-vis="busy"] .hub,.stage[data-vis="ghost"] .hub,.stage[data-vis="confirm"] .hub,.stage[data-vis="bye"] .hub,.stage[data-vis="error"] .hub{opacity:0;transform:translateY(-.8em) scale(.96)}
+.stage[data-vis="off"] .sp-m,.stage[data-vis="bye"] .sp-m{opacity:0;transform:scale(.5)}
+.stage[data-vis="off"] .ghost-m{opacity:1}
+.stage[data-kind="outdated"] .badge{opacity:1;transform:none}
+.stage[data-vis="ghost"] .win{opacity:.38;filter:grayscale(1) brightness(.75)}
+.stage[data-vis="ghost"] .sp-m{opacity:0;transform:scale(.5)}
+.stage[data-vis="ghost"] .win-wrap::after{opacity:0}
+.stage[data-vis="ghost"] .halo,.stage[data-vis="ghost"] .arc{opacity:.55}
+.stage[data-vis="busy"] .ring,.stage[data-vis="error"] .ring{opacity:1}
+.stage[data-vis="busy"] .sp-m{opacity:var(--m-op,.35);transform:scale(.82);box-shadow:0 0 0 0 transparent,0 0 1.2em rgba(30,215,96,calc(var(--m-op,.35) * .8)),inset 0 1px 0 rgba(255,255,255,.4)}
+.stage[data-vis="error"] .sp-m{opacity:.3;transform:scale(.82);background:#3a3f3c;color:#cfd8d2;box-shadow:none}
+.stage[data-vis="error"] .ring .val{stroke:var(--rose);filter:drop-shadow(0 0 .35em rgba(251,113,133,.8))}
+.stage[data-op="uninstall"] .ring .val{stroke:#fda4af;filter:drop-shadow(0 0 .3em rgba(253,164,175,.7))}
+.stage[data-vis="confirm"] .sp-m{box-shadow:0 0 0 .3em rgba(251,113,133,.22),0 0 1.6em rgba(251,113,133,.45),inset 0 1px 0 rgba(255,255,255,.55)}
+.stage[data-phase="closed"] .sp-body,.stage[data-phase="closed"] .sp-bar{opacity:.28;filter:saturate(.2)}
+.stage[data-vis="error"] .fig{filter:saturate(.45) brightness(.85)}
+.stage.pinging .ping{animation:ping 1.6s .15s var(--ease) 2 both}
+@keyframes ping{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(2.3)}}
+
+/* ------------------------------------------------ entrance choreography */
+.boot .sky{animation:skyIn 1.8s var(--ease) backwards}
+@keyframes skyIn{from{opacity:0;transform:translateY(2.5rem)}}
+.boot .fig-wrap{animation:figIn 1.7s .35s var(--ease) backwards}
+@keyframes figIn{from{opacity:0;transform:translateX(1.75rem)}}
+.boot .win-wrap{animation:winIn 1.4s .2s var(--ease) backwards}
+@keyframes winIn{from{opacity:0;transform:translateY(2.25rem) scale(.965)}}
+.boot .slot{animation:mIn .8s 1s var(--spring) backwards}
+@keyframes mIn{from{opacity:0;transform:scale(.3)}}
+.boot .hub-in{animation:hubIn .8s 1.2s var(--ease) backwards}
+@keyframes hubIn{from{opacity:0;transform:translateY(-.8em) scale(.96)}}
+.boot .brand,.boot .foot{animation:ent 1s var(--ease) backwards}
+.boot .foot{animation-delay:.9s}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .shimmer{background-position:0 0}
+}
+</style>
+</head>
+<body>
+<div class="app boot" id="app">
+  <section class="stage" id="stage" data-vis="promo" aria-hidden="true">
+    <div class="scene">
+      <div class="sky">
+        <div class="halo"></div>
+        <div class="arc"></div>
+      </div>
+      <div class="fig-wrap"><div class="fig" id="fig"></div></div>
+      <div class="win-wrap"><div class="win" id="win"></div></div>
+    </div>
+  </section>
+  <main class="col" id="col">
+    <header class="brand"><span class="mark" id="mark"></span><span class="wm">moggtify<i>.</i></span></header>
+    <div class="views" id="views"></div>
+    <footer class="foot" id="foot"></footer>
+  </main>
+</div>
+<script>
+"use strict";
+(() => {
+/* ================================================================ icons */
+const svg = (d, w = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const fsvg = (d) => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
+const I = {
+  m: svg('<path d="M4.5 18.5V6.8L12 13.6l7.5-6.8v11.7"/>', 3),
+  install: svg('<path d="M12 3.5v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 15.5v2A2.5 2.5 0 0 0 7 20h10a2.5 2.5 0 0 0 2.5-2.5v-2"/>', 2.1),
+  repair: svg('<path d="M14.7 6.3a4 4 0 0 0 5 5L21 12.6a6 6 0 0 1-7.6 1.2L7 20.2a2 2 0 0 1-2.8-2.8l6.4-6.4A6 6 0 0 1 11.4 3l1.3 1.3a4 4 0 0 0 2 2z"/>', 1.9),
+  trash: svg('<path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/>', 1.9),
+  arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>', 2.3),
+  out: svg('<path d="M8 16 16 8M9.5 8H16v6.5"/>', 2.2),
+  check: svg('<path d="M5 12.5 10 17.5 19 7"/>', 3.2),
+  bang: svg('<path d="M12 7v6.5M12 17.2v.1"/>', 3),
+  copy: svg('<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>', 1.9),
+  retry: svg('<path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/>', 2),
+  undo: svg('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>', 1.9),
+  chipset: svg('<rect x="6" y="6" width="12" height="12" rx="2.5"/><path d="M10 2.5v3M14 2.5v3M10 18.5v3M14 18.5v3M2.5 10h3M2.5 14h3M18.5 10h3M18.5 14h3"/>', 1.8),
+  restart: svg('<path d="M12 3v6"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>', 2),
+  shield: svg('<path d="M12 3.5 19 6v5.5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/>', 1.9),
+  /* spotify mock glyphs */
+  home: fsvg('<path d="M12 3.2 3 10.4V21h6.5v-6h5v6H21V10.4z"/>'),
+  search: svg('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>', 2.2),
+  bell: svg('<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/>', 1.9),
+  lib: svg('<path d="M5 4v16M10 4v16M14.5 4.5l5 15"/>', 2),
+  left: svg('<path d="M15 5l-7 7 7 7"/>', 2.4),
+  right: svg('<path d="M9 5l7 7-7 7"/>', 2.4),
+  play: fsvg('<path d="M8 5.2v13.6L19 12z"/>'),
+  prev: fsvg('<path d="M6 5h2v14H6zM9.5 12 19 5.5v13z"/>'),
+  next: fsvg('<path d="M16 5h2v14h-2zM14.5 12 5 18.5v-13z"/>'),
+  x: svg('<path d="M6 6l12 12M18 6 6 18"/>', 2.2),
+  note: fsvg('<path d="M9 17.5V6.2l10-2.2v11.2a2.8 2.8 0 1 1-2-2.7V7.4l-6 1.3v8.8A2.8 2.8 0 1 1 9 17.5z"/>'),
+  spark: svg('<path d="M12 3.5l1.9 5.2 5.1 1.8-5.1 1.9L12 17.6l-1.9-5.2L5 10.5l5.1-1.8z"/>', 1.8),
+  expand: svg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', 1.9),
+};
+
+/* ================================================================ artwork */
+const FIGURE = `<svg viewBox="0 0 520 560" aria-hidden="true">
+<defs>
+  <path id="fSil" d="M36 560C40 498 48 444 66 410C84 378 122 358 172 346C200 339 222 332 234 322C238 308 238 296 236 288C226 282 204 279 186 276C174 274 165 268 164 259C164 253 168 249 168 246C166 242 161 241 161 237C161 234 165 232 165 230C164 228 159 226 160 221C161 217 164 215 164 213C159 211 149 208 147 203C145 199 147 195 149 192C155 183 163 172 167 166C168 162 165 158 165 153C165 138 168 122 174 110C171 100 171 90 178 81C186 70 200 62 216 57C230 52 246 51 262 52C284 54 304 62 318 74C332 87 340 104 342 124C344 146 341 170 336 190C330 213 318 234 310 250C306 264 306 282 310 296C326 290 346 296 360 312C368 322 378 330 394 336C426 348 460 362 480 384C498 402 508 428 512 456C516 490 518 530 520 560Z"/>
+  <linearGradient id="fBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1711"/><stop offset=".55" stop-color="#050a07"/><stop offset="1" stop-color="#030605"/></linearGradient>
+  <linearGradient id="fRim" gradientUnits="userSpaceOnUse" x1="470" y1="60" x2="150" y2="330"><stop offset="0" stop-color="#eafff2"/><stop offset=".35" stop-color="#8ff5bb"/><stop offset=".72" stop-color="#1ed760" stop-opacity=".7"/><stop offset="1" stop-color="#1ed760" stop-opacity=".26"/></linearGradient>
+  <radialGradient id="fScreen" gradientUnits="userSpaceOnUse" cx="150" cy="380" r="260"><stop offset="0" stop-color="#1ed760" stop-opacity=".2"/><stop offset="1" stop-color="#1ed760" stop-opacity="0"/></radialGradient>
+  <clipPath id="fClip"><use href="#fSil"/></clipPath>
+  <filter id="fBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
+  <filter id="fBlur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+  <radialGradient id="fCup" cx=".3" cy=".25" r=".95"><stop offset="0" stop-color="#1b3024"/><stop offset=".6" stop-color="#08110c"/><stop offset="1" stop-color="#030605"/></radialGradient>
+</defs>
+<use href="#fSil" fill="none" stroke="url(#fRim)" stroke-width="12" filter="url(#fBlur)" opacity=".4"/>
+<path d="M283 150C292 108 290 62 258 46C238 37 216 42 204 60" fill="none" stroke="#040806" stroke-width="17" stroke-linecap="round"/>
+<path d="M291 150C300 104 297 54 260 37C238 28 214 34 202 50" fill="none" stroke="url(#fRim)" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+<use href="#fSil" fill="url(#fBody)"/>
+<g clip-path="url(#fClip)">
+  <rect width="520" height="560" fill="url(#fScreen)"/>
+  <use href="#fSil" fill="none" stroke="url(#fRim)" stroke-width="24" filter="url(#fBlur)" opacity=".32"/>
+  <use href="#fSil" fill="none" stroke="url(#fRim)" stroke-width="3.4"/>
+  <path d="M190 274C220 272 246 266 266 248" fill="none" stroke="#6ff0a3" stroke-opacity=".26" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M302 74C316 84 326 98 331 116M286 62C298 66 308 72 316 82" fill="none" stroke="#b9ffd5" stroke-opacity=".32" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M226 326C252 350 300 350 334 318" fill="none" stroke="#1ed760" stroke-opacity=".24" stroke-width="2"/>
+  <path d="M254 344L250 404M290 342L296 398" fill="none" stroke="#1ed760" stroke-opacity=".14" stroke-width="2" stroke-linecap="round"/>
+</g>
+<path d="M283 150C292 108 290 62 258 46" fill="none" stroke="#06100a" stroke-width="17" stroke-linecap="round"/>
+<path d="M291 150C300 104 297 54 260 37" fill="none" stroke="url(#fRim)" stroke-width="2.2" stroke-linecap="round"/>
+<g transform="rotate(9 276 190)">
+  <ellipse cx="266" cy="190" rx="36" ry="50" fill="#050b08" stroke="#1ed760" stroke-opacity=".18" stroke-width="1.5"/>
+  <ellipse cx="279" cy="190" rx="38" ry="50" fill="url(#fCup)"/>
+  <ellipse cx="279" cy="190" rx="38" ry="50" fill="none" stroke="url(#fRim)" stroke-width="2.6"/>
+  <ellipse cx="276" cy="190" rx="25" ry="35" fill="none" stroke="#1ed760" stroke-opacity=".3" stroke-width="1.5"/>
+  <path d="M267 199v-15l9 8 9-8v15" fill="none" stroke="#1ed760" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".35" filter="url(#fBlur2)"/>
+  <path d="M267 199v-15l9 8 9-8v15" fill="none" stroke="#8ff5bb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>`;
+
+const DESIGNS = [
+  ["Mogg", "#a78bfa", "#0d0d14", "#181824", "#07070b", "#f3f2fa"],
+  ["Obsidian", "#ffffff", "#000000", "#141414", "#000000", "#ffffff"],
+  ["Ember", "#ff7a45", "#15100e", "#221a17", "#0c0807", "#fbf1ea"],
+  ["Glacier", "#38bdf8", "#0b111c", "#152033", "#060a12", "#eaf3ff"],
+  ["Sakura", "#f472b6", "#160d13", "#25161f", "#0d070b", "#fdeef6"],
+  ["Matcha", "#a3e635", "#0e130e", "#192219", "#070a07", "#eef6ea"],
+  ["Dune", "#e8c170", "#13110e", "#201d18", "#0b0a08", "#f7f2e8"],
+  ["Crimson", "#f43f5e", "#120a0b", "#211315", "#0a0506", "#fcecee"],
+];
+const COVERS = ["linear-gradient(135deg,#a78bfa,#3b1d7a)", "linear-gradient(135deg,#38bdf8,#0b3550)", "linear-gradient(135deg,#f472b6,#5b0d34)", "linear-gradient(135deg,#facc15,#6b4b05)", "linear-gradient(135deg,#34d399,#083d2b)", "linear-gradient(135deg,#fb7185,#4a0c18)"];
+const RING_C = 2 * Math.PI * 22;
+
+function spotifyMock() {
+  const lib = COVERS.slice(0, 5).map((c) => `<div class="sp-li"><u style="background:${c}"></u><span><i></i><i></i></span></div>`).join("");
+  const tracks = [1, 2, 3].map((n, k) => `<div class="sp-tr${k === 1 ? " on" : ""}"><em>${n}</em><u style="background:${COVERS[(k + 2) % COVERS.length]}"></u><span><i></i><i></i></span><em>${["3:24", "2:58", "4:11"][k]}</em></div>`).join("");
+  const sw = DESIGNS.map(([n, a, b, h, f, t]) => `<i class="sw${n === "Matcha" ? " on" : ""}" style="--a:${a};--b:${b};--h:${h};--f:${f};--t:${t}"></i>`).join("");
+  return `<div class="sp">
+    <div class="sp-top">
+      <div class="sp-dots"><b></b><b></b><b></b></div>
+      <span class="sp-nav">${I.left}</span><span class="sp-nav">${I.right}</span>
+      <div class="sp-c"><span class="sp-home">${I.home}</span><span class="sp-search">${I.search}What do you want to play?</span></div>
+      <div class="sp-r">
+        <span class="sp-ic">${I.bell}</span>
+        <span class="slot" id="slot">
+          <span class="ghost-m"></span>
+          <svg class="ring" viewBox="0 0 50 50"><circle class="trk" cx="25" cy="25" r="22"/><circle class="val" id="ringv" cx="25" cy="25" r="22" stroke-dasharray="${RING_C.toFixed(2)}" stroke-dashoffset="${RING_C.toFixed(2)}"/></svg>
+          <span class="ping"></span><span class="ping" style="animation-delay:.55s"></span>
+          <span class="sp-m">${I.m}</span>
+          <span class="badge"></span>
+        </span>
+        <span class="sp-av"><i></i></span>
+      </div>
+    </div>
+    <div class="sp-body">
+      <div class="sp-lib"><div class="sp-lib-h">${I.lib}Your Library</div><div class="sp-chips"><i>Playlists</i><i>Artists</i></div>${lib}</div>
+      <div class="sp-main">
+        <div class="sp-hero"><span class="sp-cover">${I.note}</span><div class="sp-meta"><small>Playlist</small><b>Midnight Drive</b><span>Moggtify · 32 songs</span></div></div>
+        <div class="sp-actions"><span class="sp-play">${I.play}</span><i></i></div>
+        ${tracks}
+      </div>
+    </div>
+    <div class="sp-bar">
+      <div class="sp-now"><u></u><span><b>Night Shift</b><small>The Moggers</small></span></div>
+      <div class="sp-ctl"><div class="sp-btns">${I.prev}<span class="sp-pp">${I.play}</span>${I.next}</div><div class="sp-prog"><i></i></div></div>
+      <div class="sp-vol"><i></i></div>
+    </div>
+    <div class="hub-in" style="position:absolute;inset:0;pointer-events:none"><div class="hub">
+      <div class="hub-h"><span class="hub-logo">${I.m}</span><span><b>Moggtify</b><small>Hub · v1.0</small></span><span class="hub-x">${I.x}</span></div>
+      <div class="hub-lab">Designs <em>Matcha</em></div>
+      <div class="hub-grid">${sw}</div>
+      <div class="hub-row"><span>${I.spark}Vibe Glow</span><i class="tg on"></i></div>
+      <div class="hub-row"><span>${I.expand}Stage</span><i class="tg"></i></div>
+    </div></div>
+    <div class="sweep" id="sweep"></div>
+  </div>`;
+}
+
+/* ================================================================ dom */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const app = $("#app"), views = $("#views"), stage = $("#stage"), win = $("#win");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+$("#mark").innerHTML = I.m;
+$("#fig").innerHTML = FIGURE;
+win.innerHTML = spotifyMock();
+const slot = $("#slot"), ringv = $("#ringv"), sweep = $("#sweep");
+
+/* ================================================================ bridge */
+const call = (name, ...args) => {
+  const fn = window["mogg_" + name];
+  if (typeof fn !== "function") return Promise.reject("The Moggtify bridge isn't available.");
+  try { return Promise.resolve(fn(...args)); } catch (e) { return Promise.reject(e); }
+};
+const msgOf = (e) => (e && e.message) || (typeof e === "string" ? e : JSON.stringify(e)) || "Something went wrong.";
+
+/* ================================================================ state */
+let S = null;          // last State from the app
+let op = null;         // running / last operation
+let cur = null;        // current view element
+let viewName = "";
+let viewOpts = {};
+
+const VERB = { install: "Installing", repair: "Repairing", uninstall: "Removing" };
+const NOUN = { install: "Install", repair: "Repair", uninstall: "Remove" };
+
+function kindOf(s) {
+  if (!s) return "fresh";
+  const sp = s.spotify || {};
+  if (s.busy && !op) return "busy";
+  if (!sp.found) return sp.store ? "store" : "nospotify";
+  if (sp.status === "missing") return "damaged";
+  if (!s.installed) return "fresh";
+  if (s.active || sp.status === "patched") return "active";
+  if (sp.status === "outdated") return "outdated";
+  return "inactive";
+}
+
+/* ---------------------------------------------------------------- copy */
+function homeModel(s) {
+  const k = kindOf(s), sp = (s && s.spotify) || {}, inst = !!(s && s.installed);
+  const ver = sp.version ? "Spotify " + sp.version : "Spotify";
+  const reinstall = { label: "Reinstall", sub: "Run the full setup again" };
+  const repairOn = { label: "Repair", sub: "Update the engine and re-apply the mod" };
+  const del = { label: "Remove Moggtify", sub: "Restore Spotify and remove Moggtify" };
+  const delOff = inst ? del : { label: "Remove Moggtify", sub: "Nothing installed yet", off: true };
+  const M = {
+    fresh: {
+      chip: ["ok", "Ready", ver + " found"], hl: ["the missing piece of", "modern", "Spotify."],
+      lead: "Marketplace, extensions and our own designs – straight into Spotify. One click, no terminal, fully reversible.",
+      acts: { install: { label: "Install Moggtify", sub: "Spotify restarts with the mod", primary: true }, repair: { label: "Repair", sub: "Available after install", off: true }, uninstall: { label: "Remove Moggtify", sub: "Nothing installed yet", off: true } },
+    },
+    active: {
+      chip: ["ok", "Active", "Running in " + ver], hl: ["moggtify is", "live in", "Spotify."],
+      lead: `Open Spotify and click the <span class="mchip">${I.m}</span> next to your profile picture. Designs, extras and the Marketplace live there – and it stays on through Spotify updates.`,
+      acts: { install: reinstall, repair: repairOn, uninstall: del },
+    },
+    outdated: {
+      chip: ["warn", "Update", "Spotify updated and removed the mod"], hl: ["spotify updated –", "bring it", "back."],
+      lead: "A Spotify update switched Moggtify off. Repair puts it back in a few seconds – your designs and extras stay.",
+      acts: { install: reinstall, repair: { label: "Repair", sub: "Bring Moggtify back after the update", primary: true, tag: "Fix" }, uninstall: del },
+    },
+    inactive: {
+      chip: ["dim", "Off", "Installed, but not active"], hl: ["moggtify is", "taking a", "break."],
+      lead: "Moggtify is installed, but Spotify isn't modded right now. Repair switches it back on.",
+      acts: { install: reinstall, repair: { label: "Repair", sub: "Switch Moggtify back on", primary: true }, uninstall: del },
+    },
+    nospotify: {
+      chip: ["bad", "Missing", "Spotify desktop app not found"], hl: ["first things first –", "get", "Spotify."],
+      lead: "Moggtify mods the Spotify desktop app, which isn't on this PC yet. Get it, open it once, then come back.",
+      get: true,
+      acts: { install: { label: "Install Moggtify", sub: "Needs the Spotify desktop app", off: true }, repair: { label: "Repair", sub: inst ? "Needs the Spotify desktop app" : "Available after install", off: true }, uninstall: delOff },
+    },
+    store: {
+      chip: ["bad", "Store", "Microsoft Store version found"], hl: ["almost there –", "swap your", "Spotify."],
+      lead: "The Microsoft Store version locks its files, so it can't be modded. Get Spotify from spotify.com instead.",
+      get: true,
+      acts: { install: { label: "Install Moggtify", sub: "Needs Spotify from spotify.com", off: true }, repair: { label: "Repair", sub: inst ? "Needs Spotify from spotify.com" : "Available after install", off: true }, uninstall: delOff },
+    },
+    damaged: {
+      chip: ["bad", "Broken", "Spotify's files are missing"], hl: ["hold on –", "reinstall", "Spotify."],
+      lead: "Spotify's interface files are missing, so it can't be modded. Reinstall it from spotify.com, then come back.",
+      get: true,
+      acts: { install: { label: "Install Moggtify", sub: "Reinstall Spotify first", off: true }, repair: { label: "Repair", sub: "Reinstall Spotify first", off: true }, uninstall: delOff },
+    },
+    busy: {
+      chip: ["warn", "Busy", "Finishing a running task"], hl: ["one moment –", "almost", "there."],
+      lead: "Moggtify is still working on something. This page updates on its own when it's done.",
+      acts: { install: { label: "Install Moggtify", sub: "Please wait", off: true }, repair: { label: "Repair", sub: "Please wait", off: true }, uninstall: { label: "Remove Moggtify", sub: "Please wait", off: true } },
+    },
+  };
+  return Object.assign({ kind: k }, M[k]);
+}
+
+/* ---------------------------------------------------------------- pieces */
+const chipHTML = ([tone, label, text], i) => `<div class="chip ${tone} ent" style="--i:${i}"><b>${esc(label)}</b><span>${esc(text)}</span></div>`;
+const hlHTML = ([a, b, c], i, l3 = "shimmer") => `<h1 class="hl"><span class="l1 ent" style="--i:${i}">${esc(a)}</span><span class="l2 ent" style="--i:${i + 1}">${esc(b)}</span><span class="l3 ${l3} ent" style="--i:${i + 2}">${esc(c)}</span></h1>`;
+const ACT_ICON = { install: I.install, repair: I.repair, uninstall: I.trash };
+function actHTML(id, a, i) {
+  const cls = ["act", a.primary && !a.off ? "primary" : "", id === "uninstall" ? "danger" : ""].join(" ").trim();
+  return `<button class="${cls} ent" style="--i:${i}" data-action="${id}"${a.off ? " disabled" : ""}>
+    <span class="ic">${ACT_ICON[id]}</span>
+    <span class="tx"><b>${esc(a.label)}${a.tag ? `<span class="tag">${esc(a.tag)}</span>` : ""}</b><small>${esc(a.sub)}</small></span>
+    <span class="go">${I.arrow}</span></button>`;
+}
+
+/* ================================================================ views */
+const V = {
+  home() {
+    const m = homeModel(S);
+    return `${chipHTML(m.chip, 0)}${hlHTML(m.hl, 1)}
+      <p class="lead ent" style="--i:4">${m.lead}</p>
+      ${m.get ? `<div class="btns ent" style="--i:5;margin-top:1.25rem"><button class="btn light" data-open="download">Get Spotify ${I.out}</button></div>` : ""}
+      <div class="acts${m.get ? " quiet" : ""}">${["install", "repair", "uninstall"].map((id, n) => actHTML(id, m.acts[id], 5 + n + (m.get ? 1 : 0))).join("")}</div>`;
+  },
+  confirm() {
+    const owned = !S || !S.config || S.config.engineOwned !== false;
+    const fromSettings = S && S.mode === "uninstall";
+    return `${chipHTML(["bad", "Remove", "You can reinstall any time"], 0)}
+      ${hlHTML(["sure about this?", "Remove", "Moggtify?"], 1, "rose")}
+      <ul class="facts">
+        <li class="ent" style="--i:4"><i>${I.undo}</i>Spotify goes back to its original look</li>
+        <li class="ent" style="--i:5"><i>${I.trash}</i>Moggtify, its designs and extras are removed</li>
+        ${owned ? `<li class="ent" style="--i:6"><i>${I.chipset}</i>The engine it installed is removed</li>`
+                : `<li class="keep ent" style="--i:6"><i>${I.shield}</i>Your own mod setup stays untouched</li>`}
+      </ul>
+      <div class="btns ent" style="--i:7">
+        <button class="btn danger" data-confirm>${I.trash}Remove Moggtify</button>
+        <button class="btn" data-cancel>${fromSettings ? "Keep Moggtify" : "Cancel"}</button>
+      </div>`;
+  },
+  progress() {
+    const n = op.steps.length;
+    return `<div class="eyebrow ent" style="--i:0">${esc(VERB[op.name] || "Working")} <em id="pcount">Step 1 of ${n}</em></div>
+      <div class="pnum ent" style="--i:1"><span class="n still" id="pnum">0<small>%</small></span></div>
+      <div class="now ent" style="--i:2" id="pnow"><span>Getting ready …</span></div>
+      <div class="bar ent" style="--i:3"><i id="pbar"></i></div>
+      <ol class="steps">${op.steps.map((s, k) => `<li class="st ent" style="--i:${4 + k}" data-step="${esc(s.id)}"><span class="ind">${I.check}</span><span class="lb">${esc(s.label)}</span><span class="dt"></span></li>`).join("")}</ol>
+      <div class="hint ent" style="--i:${4 + n}">${I.restart}${op.name === "uninstall" ? "Spotify restarts in its original look when this is done." : "Spotify closes and restarts on its own – no need to touch it."}</div>`;
+  },
+  error() {
+    const n = op.steps.length, idx = Math.max(0, op.steps.findIndex((s) => s.id === op.failed));
+    const failed = op.steps[idx];
+    const where = failed ? `Stopped at “${failed.label}”` : `${NOUN[op.name] || "Operation"} stopped`;
+    const segs = op.steps.map((s, k) => `<i class="${(op.prog[s.id] || {}).state === "done" ? "d" : s.id === op.failed ? "f" : ""}"></i>`).join("");
+    return `${chipHTML(["bad", "Stopped", where], 0)}
+      ${hlHTML(["something went wrong –", "That didn't", "work."], 1, "rose")}
+      ${n ? `<div class="segs ent" style="--i:4" aria-label="Step ${idx + 1} of ${n} failed">${segs}</div>` : ""}
+      <div class="errbox ent" style="--i:5" id="errtext">${esc(op.error)}</div>
+      <div class="btns ent" style="--i:6">
+        <button class="btn light" data-retry>${I.retry}Try again</button>
+        <button class="btn" data-back>Back</button>
+        <button class="btn ghost" data-copy aria-label="Copy error message">${I.copy}<span>Copy</span></button>
+      </div>`;
+  },
+  success(o) {
+    const rep = o.op === "repair";
+    return `${chipHTML(["ok", rep ? "Fixed" : "Done", "Spotify is restarting"], 0)}
+      ${hlHTML([rep ? "back in action –" : "you're all set –", "look for", "the M."], 1)}
+      <p class="lead ent" style="--i:4">Spotify is restarting with Moggtify${rep ? " back on" : ""}. Click the <span class="mchip">${I.m}</span> <b>next to your profile picture</b> to open the Hub with designs and extras.</p>
+      <div class="btns ent" style="--i:5"><button class="btn light" data-close>${I.check}Close</button><button class="btn" data-home>Back</button></div>`;
+  },
+  bye() {
+    return `${chipHTML(["dim", "Removed", "Spotify is back to the original"], 0)}
+      ${hlHTML(["all cleaned up –", "see you", "soon."], 1)}
+      <p class="lead ent" style="--i:4">Moggtify has been removed from this PC and Spotify is back to its original look. Thanks for trying it.</p>
+      <div class="btns ent" style="--i:5"><button class="btn light" data-close>Close</button></div>`;
+  },
+};
+
+function show(name, opts = {}) {
+  const el = document.createElement("section");
+  el.className = "view v-" + name;
+  el.innerHTML = V[name](opts);
+  const old = cur, hadFocus = old && old.contains(document.activeElement);
+  if (old) {
+    old.classList.add("out");
+    old.setAttribute("inert", "");
+    old.setAttribute("aria-hidden", "true");
+    old.querySelectorAll("[data-action],[data-confirm]").forEach((n) => { n.removeAttribute("data-action"); n.removeAttribute("data-confirm"); });
+    setTimeout(() => old.remove(), 320);
+  }
+  views.append(el);
+  cur = el; viewName = name; viewOpts = opts;
+  bind(el, name);
+  fit(el);
+  syncVisual();
+  if (hadFocus || name === "confirm") {
+    const f = el.querySelector(".act:not([disabled]),.btn");
+    if (f) f.focus({ preventScroll: true });
+  }
+  if (name === "progress") updateProgress(true);
+}
+
+/* heavy headline lines never wrap; shrink them together if a word is too wide */
+function fit(root) {
+  const lines = [...root.querySelectorAll(".hl .l2,.hl .l3")];
+  if (!lines.length) return;
+  let r = 1;
+  for (const l of lines) if (l.scrollWidth > l.clientWidth + 1) r = Math.min(r, l.clientWidth / l.scrollWidth);
+  if (r < 1) lines.forEach((l) => { l.style.fontSize = (3.875 * r * 0.98).toFixed(3) + "rem"; });
+}
+
+function bind(el, name) {
+  el.querySelectorAll("[data-action]").forEach((b) => b.addEventListener("click", () => {
+    if (b.disabled) return;
+    const a = b.dataset.action;
+    if (a === "uninstall") show("confirm");
+    else start(a);
+  }));
+  el.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => call("open", b.dataset.open).catch(() => {})));
+  const on = (sel, fn) => { const n = el.querySelector(sel); if (n) n.addEventListener("click", fn); };
+  on("[data-confirm]", () => start("uninstall"));
+  on("[data-cancel]", () => { if (S && S.mode === "uninstall") call("quit").catch(() => {}); else show("home"); });
+  on("[data-retry]", () => start(op ? op.name : "install"));
+  on("[data-back]", () => { op = null; refresh(true); });
+  on("[data-copy]", (e) => copyText(op ? op.error : "", e.currentTarget));
+  on("[data-close]", () => call("quit").catch(() => {}));
+  on("[data-home]", () => show("home"));
+}
+
+/* ================================================================ operations */
+function beginOp(name) {
+  op = { name, steps: ((S && S.steps && S.steps[name]) || []).slice(), prog: {}, cur: "", failed: "", error: "", running: true };
+  endBoot();
+  stage.dataset.op = name;
+  stage.classList.remove("pinging");
+  setRing(0);
+  show("progress");
+}
+async function start(name) {
+  if (op && op.running) return;
+  beginOp(name);
+  try { await call(name); }
+  catch (e) { if (op && op.running) onError({ op: name, message: msgOf(e) }); }
+}
+function pct() {
+  if (!op || !op.steps.length) return 0;
+  let v = 0;
+  for (const s of op.steps) { const p = op.prog[s.id]; if (p && p.state === "done") v += 1; else if (p && p.state === "run") v += 0.45; }
+  return Math.min(100, Math.round((v / op.steps.length) * 100));
+}
+let shownPct = 0, tween = 0;
+function animateNumber(to) {
+  const node = $("#pnum");
+  if (!node) return;
+  cancelAnimationFrame(tween);
+  const from = shownPct, t0 = performance.now(), dur = reduced.matches ? 0 : 650;
+  const step = () => {
+    const k = dur ? Math.max(0, Math.min(1, (performance.now() - t0) / dur)) : 1, e = 1 - Math.pow(1 - k, 3);
+    shownPct = Math.max(0, Math.round(from + (to - from) * e));
+    node.innerHTML = shownPct + "<small>%</small>";
+    if (k < 1) tween = requestAnimationFrame(step);
+  };
+  step();
+  // Never leave a stale number behind if animation frames are throttled.
+  setTimeout(() => { if (shownPct !== to && node.isConnected) { shownPct = to; node.innerHTML = to + "<small>%</small>"; } }, dur + 80);
+}
+function updateProgress(first) {
+  if (!op || viewName !== "progress" || !cur) return;
+  const p = pct();
+  if (first) shownPct = 0;
+  const bar = $("#pbar", cur); if (bar) bar.style.width = p + "%";
+  animateNumber(p);
+  setRing(p / 100);
+  let runIdx = -1, doneCount = 0;
+  op.steps.forEach((s, k) => {
+    const st = op.prog[s.id] || {};
+    const li = cur.querySelector(`[data-step="${CSS.escape(s.id)}"]`);
+    if (st.state === "done") doneCount++;
+    if (st.state === "run") runIdx = k;
+    if (!li) return;
+    const cls = ("st ent " + (st.state || "")).trim();
+    if (li.className !== cls) li.className = cls;
+    const dt = li.querySelector(".dt");
+    if (dt.textContent !== (st.detail || "")) dt.textContent = st.detail || "";
+  });
+  const n = op.steps.length;
+  const at = runIdx >= 0 ? runIdx : Math.min(doneCount, n - 1);
+  const cnt = $("#pcount", cur); if (cnt) cnt.textContent = `Step ${Math.max(1, at + 1)} of ${n}`;
+  const now = $("#pnow", cur);
+  if (now) {
+    const s = op.steps[at];
+    const txt = doneCount >= n && n ? "Finishing up …" : s ? s.label + " …" : "Getting ready …";
+    const span = now.querySelector("span");
+    if (span && span.textContent !== txt) {
+      span.textContent = txt;
+      if (!reduced.matches && span.animate) span.animate([{ opacity: 0, transform: "translateY(.375rem)" }, { opacity: 1, transform: "none" }], { duration: 380, easing: "cubic-bezier(.16,1,.3,1)" });
+    }
+  }
+}
+function setRing(p) {
+  ringv.style.strokeDashoffset = (RING_C * (1 - Math.max(0, Math.min(1, p)))).toFixed(2);
+  const mo = op && op.name === "uninstall" ? 1 - 0.85 * p : 0.3 + 0.7 * p;
+  slot.style.setProperty("--m-op", mo.toFixed(3));
+}
+
+function onProgress(d) {
+  if (!d || !d.op) return;
+  if (!op || op.name !== d.op || !op.running) beginOp(d.op);
+  const p = op.prog[d.step] || (op.prog[d.step] = {});
+  p.state = d.state;
+  if (d.detail) p.detail = d.detail;
+  if (d.state === "run") op.cur = d.step;
+  // the stage reacts to what is really happening
+  if (d.step === "close" && d.state === "run") stage.dataset.phase = "closed";
+  if (d.step === "launch" && d.state === "run") stage.dataset.phase = "";
+  if (d.step === "patch" && d.state === "run") fireSweep();
+  if (d.step === "patch" && d.state === "done") win.dataset.theme = "";
+  if (d.step === "restore" && d.state === "done") win.dataset.theme = "stock";
+  updateProgress();
+}
+function onDone(d) {
+  if (d && d.state) S = d.state;
+  const name = (d && d.op) || (op && op.name) || "install";
+  if (op && op.name === name) {
+    op.steps.forEach((s) => { const p = op.prog[s.id] || (op.prog[s.id] = {}); p.state = "done"; });
+    op.running = false;
+    updateProgress();
+  }
+  stage.dataset.phase = "";
+  setTimeout(() => {
+    op = null;
+    stage.dataset.op = "";
+    if (name === "uninstall") show("bye");
+    else { show("success", { op: name }); ping(); }
+  }, reduced.matches ? 150 : 750);
+}
+function onError(d) {
+  if (d && d.state) S = d.state;
+  const name = (d && d.op) || (op && op.name) || "install";
+  if (!op || op.name !== name) { op = { name, steps: ((S && S.steps && S.steps[name]) || []).slice(), prog: {}, cur: "" }; }
+  op.running = false;
+  op.error = (d && d.message) || "Something went wrong.";
+  const runStep = op.steps.find((s) => (op.prog[s.id] || {}).state === "run");
+  const firstOpen = op.steps.find((s) => (op.prog[s.id] || {}).state !== "done");
+  op.failed = (runStep || firstOpen || {}).id || "";
+  stage.dataset.phase = "";
+  show("error");
+}
+window.__mogg = (name, payload) => {
+  if (name === "progress") onProgress(payload);
+  else if (name === "done") onDone(payload);
+  else if (name === "error") onError(payload);
+};
+
+/* ================================================================ stage */
+function syncVisual() {
+  const k = kindOf(S);
+  let vis = "promo", theme = win.dataset.theme || "";
+  if (op && op.running) vis = "busy";
+  else if (viewName === "error") vis = "error";
+  else if (viewName === "confirm") vis = "confirm";
+  else if (viewName === "bye") { vis = "bye"; theme = "stock"; }
+  else if (viewName === "success") { vis = "live"; theme = ""; }
+  else if (viewName === "home") {
+    vis = { fresh: "promo", active: "live", outdated: "off", inactive: "off", nospotify: "ghost", store: "ghost", damaged: "ghost", busy: "busy" }[k] || "promo";
+    theme = k === "outdated" || k === "inactive" || k === "busy" ? "stock" : "";
+  }
+  stage.dataset.vis = vis;
+  stage.dataset.kind = viewName === "home" ? k : "";
+  win.dataset.theme = theme;
+  if (vis !== "busy" && vis !== "error") setRing(0);
+}
+function ping() {
+  if (reduced.matches) return;
+  stage.classList.remove("pinging");
+  void stage.offsetWidth;
+  stage.classList.add("pinging");
+  setTimeout(() => stage.classList.remove("pinging"), 3800);
+}
+function fireSweep() {
+  if (reduced.matches) return;
+  sweep.classList.remove("go");
+  void sweep.offsetWidth;
+  sweep.classList.add("go");
+}
+
+/* subtle depth: the window and figure follow the pointer a little */
+let px = 0, py = 0, praf = 0;
+addEventListener("pointermove", (e) => {
+  if (reduced.matches) return;
+  px = (e.clientX / innerWidth) * 2 - 1;
+  py = (e.clientY / innerHeight) * 2 - 1;
+  if (!praf) praf = requestAnimationFrame(() => { praf = 0; stage.style.setProperty("--mx", px.toFixed(3)); stage.style.setProperty("--my", py.toFixed(3)); });
+}, { passive: true });
+
+/* ================================================================ misc */
+function copyText(text, btn) {
+  let ok = false;
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;opacity:0";
+  document.body.append(ta); ta.select();
+  try { ok = document.execCommand("copy"); } catch (_) {}
+  ta.remove();
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+  if (btn) {
+    const label = btn.querySelector("span");
+    if (label) { label.textContent = "Copied"; setTimeout(() => { label.textContent = "Copy"; }, 1600); }
+  }
+}
+function footer() {
+  const v = S && S.version ? "v" + esc(S.version) : "";
+  $("#foot").innerHTML = `${v ? `<span>${v}</span><span class="sep">·</span>` : ""}<button class="lnk" data-o="repo">GitHub</button>`;
+  $("#foot").querySelectorAll("[data-o]").forEach((b) => b.addEventListener("click", () => call("open", b.dataset.o).catch(() => {})));
+}
+let booted = false;
+function endBoot() { if (booted) return; booted = true; app.classList.remove("boot"); }
+
+async function refresh(forceHome) {
+  try { S = await call("state"); } catch (_) { /* keep the last state */ }
+  if (forceHome || viewName === "home") show("home");
+}
+addEventListener("focus", async () => {
+  if (viewName !== "home" || (op && op.running)) return;
+  const before = kindOf(S);
+  try { S = await call("state"); } catch (_) { return; }
+  if (kindOf(S) !== before) show("home");
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "F5" || (e.ctrlKey && /^[rpfu]$/i.test(e.key))) e.preventDefault();
+  if (e.key === "Escape" && viewName === "confirm") { const c = cur && cur.querySelector("[data-cancel]"); if (c) c.click(); }
+});
+addEventListener("contextmenu", (e) => { if (!e.target.closest(".errbox")) e.preventDefault(); });
+
+/* ================================================================ boot */
+(async function boot() {
+  try { S = await call("state"); }
+  catch (e) {
+    S = null;
+    op = { name: "install", steps: [], prog: {}, error: msgOf(e), failed: "", running: false };
+    footer();
+    show("error");
+    return;
+  }
+  footer();
+  show(S.mode === "uninstall" ? "confirm" : "home");
+  setTimeout(endBoot, reduced.matches ? 0 : 2600);
+})();
+})();
+</script>
+</body>
+</html>

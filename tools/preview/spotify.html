@@ -1,0 +1,92 @@
+<!doctype html>
+<!--
+  Preview of Moggtify inside Spotify (no real Spotify needed).
+    go run . --dump-extension dist/moggtify.js
+    open tools/preview/spotify.html?hub=designs&design=mogg
+-->
+<html lang="en" class="encore-dark-theme">
+<head>
+<meta charset="utf-8">
+<title>Spotify preview</title>
+<style>
+:root{--spice-main:#121212;--spice-sidebar:#000;--spice-player:#000;--spice-card:#282828;--spice-main-elevated:#242424;--spice-highlight:#1a1a1a;--spice-highlight-elevated:#2a2a2a;--spice-text:#fff;--spice-subtext:#b3b3b3;--spice-button:#1db954;--spice-button-active:#1ed760;--spice-button-disabled:#535353;--spice-tab-active:#333;--spice-notification:#4687d6;--spice-notification-error:#e22134;--spice-misc:#7f7f7f;--spice-shadow:#000;--spice-selected-row:#fff;--spice-rgb-text:255,255,255;--spice-rgb-main:18,18,18;--spice-rgb-shadow:0,0,0}
+.encore-dark-theme{--background-base:var(--spice-main);--background-highlight:var(--spice-main-elevated);--background-elevated-base:var(--spice-main-elevated);--background-elevated-highlight:var(--spice-highlight-elevated);--background-tinted-base:rgba(var(--spice-rgb-text),.1);--text-base:var(--spice-text);--text-subdued:var(--spice-subtext);--essential-bright-accent:var(--spice-button-active);--text-bright-accent:var(--spice-button-active)}
+html,body{margin:0;height:100%;background:var(--spice-sidebar);color:var(--spice-text);font:14px "Segoe UI Variable Text","Segoe UI",sans-serif;overflow:hidden}
+#main>div{display:grid;grid-template-columns:300px 1fr;grid-template-rows:64px 1fr 72px;gap:8px;height:100vh;padding:0 8px 8px;box-sizing:border-box}
+.main-globalNav{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 8px}
+.main-globalNav-historyButtons{display:flex;gap:4px}
+.round{width:32px;height:32px;border-radius:50%;background:var(--spice-main-elevated);display:grid;place-items:center;color:var(--spice-subtext);border:0}
+.search{flex:0 1 460px;height:44px;border-radius:99px;background:var(--spice-main-elevated);display:flex;align-items:center;padding:0 16px;color:var(--spice-subtext);margin:0 auto}
+.main-globalNav-contentRight{display:flex;align-items:center;gap:8px}
+.main-actionButtons{display:flex;align-items:center;gap:8px}
+.main-actionButtons-button{width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:var(--spice-subtext);display:grid;place-items:center;cursor:pointer}
+.main-actionButtons-button:hover{color:var(--spice-text)}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f9a8d4,#fb7185);border:4px solid var(--spice-main-elevated);display:block}
+nav.lib,main.view{background:var(--spice-main);border-radius:8px;padding:16px;overflow:hidden}
+.row{display:flex;gap:10px;align-items:center;margin:10px 0}.row u{width:48px;height:48px;border-radius:4px;background:var(--spice-card)}
+.row span{color:var(--spice-subtext)}
+main.view h1{font-size:30px;margin:8px 0 16px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.card{background:var(--spice-card);border-radius:8px;padding:12px}.card i{display:block;aspect-ratio:1;border-radius:6px;background:linear-gradient(135deg,#2a2a2a,#3a3a3a);margin-bottom:10px}
+.card b{display:block}.card small{color:var(--spice-subtext)}
+.play{width:48px;height:48px;border-radius:50%;background:var(--spice-button-active);display:inline-block;margin-top:16px}
+footer{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:0 8px;background:var(--spice-player)}
+footer img,footer .cover{width:56px;height:56px;border-radius:4px;background:linear-gradient(135deg,#a3e635,#365314)}
+footer .ctl{flex:1;display:flex;justify-content:center;gap:16px;align-items:center}
+footer .pp{width:32px;height:32px;border-radius:50%;background:var(--spice-text);border:0}
+</style>
+<script src="mock-spicetify.js"></script>
+</head>
+<body>
+<div id="main"><div>
+  <div class="main-globalNav" data-testid="global-nav-bar">
+    <div class="main-globalNav-historyButtons"><button class="round">‹</button><button class="round">›</button></div>
+    <div class="search">What do you want to play?</div>
+    <div class="main-globalNav-contentRight">
+      <div class="main-actionButtons">
+        <button class="main-actionButtons-button" aria-label="What's New">🔔</button>
+        <button class="main-actionButtons-button" aria-label="Friend Activity">👥</button>
+      </div>
+      <a data-testid="user-widget-link" href="#"><span class="avatar"></span></a>
+    </div>
+  </div>
+  <nav class="lib"><b>Your Library</b>
+    <div class="row"><u></u><div>Liked Songs<br><span>Playlist · 412 songs</span></div></div>
+    <div class="row"><u></u><div>Night Shift<br><span>Album · The Moggers</span></div></div>
+    <div class="row"><u></u><div>Daily Mix 1<br><span>Playlist</span></div></div>
+  </nav>
+  <main class="view"><h1>Good evening</h1>
+    <div class="cards">
+      <div class="card"><i></i><b>Midnight Drive</b><small>The Moggers</small></div>
+      <div class="card"><i></i><b>Focus Flow</b><small>Playlist</small></div>
+      <div class="card"><i></i><b>Lo-fi Nights</b><small>Playlist</small></div>
+      <div class="card"><i></i><b>Gym Mode</b><small>Playlist</small></div>
+      <div class="card"><i></i><b>Release Radar</b><small>Playlist</small></div>
+    </div>
+    <span class="play"></span>
+  </main>
+  <footer data-testid="now-playing-bar">
+    <div data-testid="now-playing-widget" style="display:flex;gap:12px;align-items:center"><div class="cover" data-testid="cover-art-image"></div>
+      <div><a data-testid="context-item-info-title">Midnight Drive</a><br><span data-testid="context-item-info-artist" style="color:var(--spice-subtext)">The Moggers</span></div></div>
+    <div class="ctl"><button data-testid="control-button-skip-back" class="round">⏮</button><button data-testid="control-button-playpause" class="pp" aria-label="Pause"></button><button data-testid="control-button-skip-forward" class="round">⏭</button>
+      <span data-testid="playback-position">1:01</span><span data-testid="playback-duration">3:34</span></div>
+    <div data-testid="volume-bar"><input type="range" min="0" max="1" step="0.01" value="0.6"></div>
+  </footer>
+</div></div>
+<script src="../../dist/moggtify.js"></script>
+<script>
+  const q = new URLSearchParams(location.search);
+  setTimeout(() => {
+    const M = window.Moggtify;
+    if (!M) return;
+    if (q.get("design") && M.theme && M.theme.set) M.theme.set(q.get("design"), { animate: false });
+    if (q.get("hub")) {
+      const b = document.querySelector('[data-moggtify="topbar"] button');
+      if (b) b.click();
+      const t = q.get("hub");
+      setTimeout(() => { const tab = [...document.querySelectorAll("[role=tab],button")].find((x) => x.textContent.trim().toLowerCase().startsWith(t)); if (tab) tab.click(); }, 300);
+    }
+  }, 1200);
+</script>
+</body>
+</html>

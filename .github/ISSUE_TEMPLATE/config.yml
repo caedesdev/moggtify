@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Problem with Spicetify itself
+    url: https://github.com/spicetify/cli/issues
+    about: Happens with plain Spicetify too, without Moggtify? Report it to Spicetify CLI.
+  - name: Problem with the Marketplace
+    url: https://github.com/spicetify/marketplace/issues
+    about: Issues with the Marketplace app. Problems with a specific theme or extension go to that project's own repository.

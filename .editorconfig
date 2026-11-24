@@ -1,0 +1,27 @@
+# https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# gofmt uses tabs
+[*.go]
+indent_style = tab
+indent_size = 4
+
+[go.mod]
+indent_style = tab
+
+# PowerShell: CRLF (see .gitattributes), 4-space indent
+[*.{ps1,psm1,psd1,cmd,bat}]
+end_of_line = crlf
+indent_size = 4
+
+# Two trailing spaces are a line break in Markdown
+[*.md]
+trim_trailing_whitespace = false

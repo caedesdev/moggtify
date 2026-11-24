@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & publish
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # The exe reports AppVersion in Windows "Installed apps" and in the Hub,
+      # so a release must never ship with a different number.
+      - name: Check that the tag matches AppVersion
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $hit = Select-String -Path *.go -Pattern 'AppVersion\s*=\s*"([^"]+)"' | Select-Object -First 1
+          if (-not $hit) { Write-Output "::error::No AppVersion constant found in *.go"; exit 1 }
+          $version = $hit.Matches[0].Groups[1].Value
+          if ($env:TAG -ne "v$version") {
+            Write-Output "::error file=$($hit.Filename),line=$($hit.LineNumber)::Tag $env:TAG does not match AppVersion $version. Bump AppVersion (and winres/winres.json) or tag v$version."
+            exit 1
+          }
+          $winres = Get-Content winres/winres.json -Raw | ConvertFrom-Json
+          $product = $winres.RT_VERSION.'#1'.'0000'.info.'0409'.ProductVersion
+          if ($product -and $product -ne $version) {
+            Write-Output "::warning file=winres/winres.json::ProductVersion $product differs from AppVersion $version (shown in the exe's file properties)."
+          }
+
+      - name: Test
+        run: go test ./...
+
+      - name: Install go-winres
+        run: go install github.com/tc-hib/go-winres@v0.3.3
+
+      - name: Build Moggtify.exe
+        run: ./build.ps1
+
+      - name: Checksum
+        id: checksum
+        run: |
+          $hash = (Get-FileHash dist/Moggtify.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Path dist/Moggtify.exe.sha256 -Value "$hash  Moggtify.exe`n" -NoNewline -Encoding ascii
+          "sha256=$hash" >> $env:GITHUB_OUTPUT
+          "SHA-256 of ``Moggtify.exe``: ``$hash``" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          SHA256: ${{ steps.checksum.outputs.sha256 }}
+        run: |
+          $files = 'dist/Moggtify.exe', 'dist/Moggtify.exe.sha256'
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            # The release already exists (drafted in the web UI, or a re-run): refresh its files.
+            gh release upload $env:TAG @files --clobber
+            exit $LASTEXITCODE
+          }
+          $notes = Join-Path $env:RUNNER_TEMP 'notes.md'
+          @(
+            'Download **Moggtify.exe** below, run it and click **Install**.'
+            ''
+            'Windows SmartScreen may warn because the exe is not code-signed: click **More info**, then **Run anyway**.'
+            ''
+            "SHA-256 of ``Moggtify.exe``: ``$env:SHA256``"
+          ) | Set-Content -Path $notes -Encoding utf8
+          $extra = @()
+          if ($env:TAG -like '*-*') { $extra += '--prerelease' }
+          gh release create $env:TAG @files --title "Moggtify $env:TAG" --notes-file $notes --generate-notes @extra
+          exit $LASTEXITCODE

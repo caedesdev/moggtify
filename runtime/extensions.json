@@ -1,0 +1,45 @@
+[
+  {
+    "id": "stage",
+    "name": "Stage",
+    "description": "A cinematic full-screen now playing view with live progress and controls.",
+    "icon": "expand",
+    "hotkey": "F8",
+    "default": false
+  },
+  {
+    "id": "vibe",
+    "name": "Vibe Glow",
+    "description": "The accent color smoothly takes on the main color of the cover art you're playing.",
+    "icon": "spark",
+    "default": false
+  },
+  {
+    "id": "ambient",
+    "name": "Ambient",
+    "description": "Soft, blurred album art glowing behind the whole app. Works with every design.",
+    "icon": "layers",
+    "default": false
+  },
+  {
+    "id": "smartskip",
+    "name": "Smart Skip",
+    "description": "Automatically skips live, sped up, slowed or remix versions. Pick the rules below.",
+    "icon": "skip",
+    "default": false
+  },
+  {
+    "id": "wheelvolume",
+    "name": "Wheel Volume",
+    "description": "Scroll over the player bar to change the volume, with a clean on-screen indicator.",
+    "icon": "volume",
+    "default": true
+  },
+  {
+    "id": "cleanui",
+    "name": "Clean UI",
+    "description": "Hides upgrade banners, download prompts and other upsell buttons.",
+    "icon": "broom",
+    "default": false
+  }
+]

@@ -1,0 +1,25 @@
+# Text files are stored with LF in the repository and checked out with LF,
+# also on Windows (keeps gofmt and diffs clean regardless of core.autocrlf).
+* text=auto eol=lf
+
+# Windows scripts keep CRLF
+*.ps1  text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+# Binary files: never touch line endings, never diff as text
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.exe  binary
+*.syso binary
+*.zip  binary
+
+# Language-aware diff hunks
+*.go diff=golang
+*.md diff=markdown

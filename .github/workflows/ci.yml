@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test & build
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check formatting
+        run: |
+          $files = gofmt -l .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($files) {
+            foreach ($f in $files) { Write-Output "::error file=$f::Not gofmt-formatted. Run: gofmt -w $f" }
+            exit 1
+          }
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Check designs
+        run: node tools/check-designs.mjs
+
+      # build.ps1 installs go-winres@latest when it is missing; pinning it here
+      # keeps CI builds reproducible.
+      - name: Install go-winres
+        run: go install github.com/tc-hib/go-winres@v0.3.3
+
+      - name: Build Moggtify.exe
+        run: ./build.ps1
+
+      - name: Upload Moggtify.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moggtify
+          path: dist/Moggtify.exe
+          if-no-files-found: error

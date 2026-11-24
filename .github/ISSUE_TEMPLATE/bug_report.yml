@@ -1,0 +1,81 @@
+name: Bug report
+description: Something in Moggtify doesn't work as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Quick check first: clicking **Repair** in the Moggtify app fixes most problems, especially after a Spotify update.
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: "Settings › System › About, e.g. Windows 11 24H2."
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+
+  - type: input
+    id: spotify
+    attributes:
+      label: Spotify version
+      description: "In Spotify: ⋯ menu › Help › About Spotify. The loader's \"Find Spotify\" step shows it too."
+      placeholder: 1.2.xx.xxx
+    validations:
+      required: true
+
+  - type: input
+    id: moggtify
+    attributes:
+      label: Moggtify version
+      description: "Shown next to Moggtify in Settings › Apps › Installed apps."
+      placeholder: 1.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where did it happen?
+      options:
+        - Install
+        - Repair
+        - Delete Moggtify
+        - Inside Spotify (Moggtify button, Hub, designs, extras)
+        - Somewhere else
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        1. Clicked Install
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error text from the loader
+      description: On the error screen, click **Copy** and paste the text here.
+      render: text
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else?
+      description: Screenshots, other Spotify mods or Spicetify setups you use, antivirus, anything that might matter.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: My Spotify is the desktop app from spotify.com, not the Microsoft Store version.
+          required: true
+        - label: I tried **Repair** in the Moggtify app.
